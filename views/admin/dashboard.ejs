@@ -1,0 +1,115 @@
+<%- include('../partials/header', { titulo: 'Dashboard' }) %>
+<%- include('_nav', { tituloPagina: 'Dashboard' }) %>
+<%- include('_filtros', { accion: '/admin' }) %>
+
+<% if (!filtro.sesiones.length) { %>
+  <div class="panel vacio"><strong>Aún no hay sesiones</strong><span>Crea la primera sesión para empezar a evaluar.</span><a class="btn" href="/admin/sesiones" style="margin-top:10px">Crear sesión</a></div>
+<% } %>
+
+<section class="kpis" aria-label="Indicadores">
+  <div class="panel kpi hero">
+    <span class="label">Promedio general</span>
+    <span class="valor"><%= promedioGeneral ?? '—' %><small> /100</small></span>
+    <span class="nota">Media de los promedios de cada participante</span>
+  </div>
+  <div class="panel kpi">
+    <span class="label">Tasa de aprobación</span>
+    <span class="valor"><%= tasaAprobacion != null ? tasaAprobacion + '%' : '—' %></span>
+    <span class="nota"><%= estados.aprobado %> de <%= definidos %> con estado definido</span>
+  </div>
+  <div class="panel kpi">
+    <span class="label">Participantes</span>
+    <span class="valor"><%= conteos.participantes %></span>
+    <span class="nota"><%= sinEvaluar %> sin evaluaciones recibidas</span>
+  </div>
+  <div class="panel kpi">
+    <span class="label">Evaluaciones</span>
+    <span class="valor"><%= conteos.evaluaciones %></span>
+    <span class="nota"><%= conteos.evaluadores_activos %> estudiantes han evaluado</span>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div><h2>Estado de los participantes</h2><p><%= nota != null ? 'Aprobado: promedio de más de ' + nota + ' puntos (umbral de la sesión).' : 'Cada estudiante se compara con el umbral de su sesión.' %> Pendiente: aún sin calificaciones suficientes.</p></div>
+  </div>
+  <div class="chart-box" style="padding-top:16px">
+    <% const tot = estados.aprobado + estados.reprobado + estados.pendiente; %>
+    <% if (!tot) { %>
+      <div class="segmentos"><div class="vacio-seg"></div></div>
+    <% } else { %>
+      <div class="segmentos" role="img" aria-label="<%= estados.aprobado %> aprobados, <%= estados.reprobado %> reprobados, <%= estados.pendiente %> pendientes">
+        <% [['aprobado', 'Aprobados'], ['reprobado', 'Reprobados'], ['pendiente', 'Pendientes']].forEach(([k, nom]) => { const n = estados[k]; if (!n) return; const p = Math.round(n / tot * 100); %>
+          <div class="<%= k %>" style="flex: <%= n %>" title="<%= nom %>: <%= n %> (<%= p %>%)"><%= p >= 8 ? p + '%' : '' %></div>
+        <% }) %>
+      </div>
+    <% } %>
+    <div class="leyenda">
+      <span><i style="background: var(--ok)"></i>Aprobados <b><%= estados.aprobado %></b></span>
+      <span><i style="background: var(--mal)"></i>Reprobados <b><%= estados.reprobado %></b></span>
+      <span><i style="background: var(--pend)"></i>Pendientes <b><%= estados.pendiente %></b></span>
+    </div>
+  </div>
+</section>
+
+<div class="dash-grid">
+  <section class="panel">
+    <div class="panel-head"><div><h2>Distribución de promedios</h2><p>Participantes por tramo de 10 puntos. La línea marca la nota de aprobación.</p></div></div>
+    <div class="chart-box"><div class="chart" data-chart="histograma" aria-label="Histograma de promedios"></div></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><h2>Rendimiento por criterio</h2><p><%= filtro.sesion ? 'Puntos promedio de cada criterio como porcentaje de su máximo. Pasa el cursor para ver cuántas veces se eligió cada opción.' : 'Elige una sesión: cada sesión puede tener su propia rúbrica.' %></p></div></div>
+    <div class="chart-box"><div class="chart" data-chart="criterios" aria-label="Rendimiento por criterio"></div></div>
+  </section>
+  <% if (datos.porSesion && datos.porSesion.length > 1) { %>
+  <section class="panel ancho">
+    <div class="panel-head"><div><h2>Promedio por sesión</h2><p>Media de los promedios de cada sesión, de la más antigua a la más reciente. Pasa el cursor para ver el umbral de cada una.</p></div></div>
+    <div class="chart-box"><div class="chart" data-chart="sesiones" aria-label="Promedio por sesión"></div></div>
+  </section>
+  <% } %>
+  <section class="panel ancho">
+    <div class="panel-head"><div><h2>Evaluaciones por día</h2><p>Evaluaciones nuevas registradas cada día (UTC).</p></div></div>
+    <div class="chart-box"><div class="chart" data-chart="dias" aria-label="Evaluaciones por día"></div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Mejores promedios</h2><p>Los cinco promedios más altos.</p></div><a class="small" href="/admin/participantes<%= filtro.qs %>">Ver todos</a></div>
+    <div class="tabla-wrap" style="margin-top:10px">
+      <table class="tabla">
+        <tbody>
+          <% if (!mejores.length) { %><tr><td><div class="vacio"><span>Todavía no hay promedios.</span></div></td></tr><% } %>
+          <% mejores.forEach((f, i) => { %>
+            <tr>
+              <td class="pos"><%= i + 1 %></td>
+              <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %> · <%= f.sesion_nombre %></span></a></td>
+              <td class="der puntaje"><%= f.promedio %></td>
+              <td><%- include('../partials/estado', { e: f.estado }) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><h2>Necesitan evaluaciones</h2><p>Quienes han recibido menos evaluaciones.</p></div></div>
+    <div class="tabla-wrap" style="margin-top:10px">
+      <table class="tabla">
+        <tbody>
+          <% if (!necesitan.length) { %><tr><td><div class="vacio"><span>No hay participantes.</span></div></td></tr><% } %>
+          <% necesitan.forEach(f => { %>
+            <tr>
+              <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %> · <%= f.sesion_nombre %></span></a></td>
+              <td class="der"><span class="mono"><%= f.n_eval %></span> <span class="muted small">recibidas</span></td>
+              <td class="der"><span class="mono"><%= f.hechas %></span> <span class="muted small">hechas</span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script type="application/json" id="datos-dashboard"><%- JSON.stringify(datos).replace(/</g, '\\u003c') %></script>
+<script>window.ESCALA = <%- JSON.stringify(escala) %>;</script>
+<script src="/charts.js?v=<%= assetVer %>"></script>
+<%- include('../partials/footer') %>

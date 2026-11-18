@@ -1,0 +1,34 @@
+<%- include('../partials/header', { titulo: 'Participantes' }) %>
+<%- include('_nav', { tituloPagina: 'Participantes' }) %>
+<%- include('_filtros', { accion: '/admin/participantes' }) %>
+
+<div class="page-head">
+  <p class="ink-2">Haz clic en un nombre para ver sus evaluaciones recibidas y hechas.</p>
+  <label class="buscar"><span class="sr-only">Buscar</span><%- icono('buscar', 16) %><input type="search" id="buscar" placeholder="Buscar por nombre o matrícula" data-filtro="#tabla-part tbody tr"></label>
+</div>
+
+<div class="panel">
+  <div class="tabla-wrap">
+  <table class="tabla" id="tabla-part">
+    <thead><tr><th>#</th><th>Participante</th><th class="solo-ancho">Sesión</th><th class="der">Recibidas</th><th class="der">Hechas</th><th class="col-regla">Promedio</th><th class="der">Puntaje</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+      <% if (!filas.length) { %><tr><td colspan="9"><div class="vacio"><strong>Sin participantes</strong><span>Aparecerán aquí cuando se registren.</span></div></td></tr><% } %>
+      <% filas.forEach((f, i) => { %>
+        <tr data-texto="<%= (f.nombre + ' ' + f.matricula + ' ' + f.sesion_nombre).toLowerCase() %>">
+          <td class="pos"><%= i + 1 %></td>
+          <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %></span></a></td>
+          <td class="solo-ancho"><div class="persona"><strong style="font-weight:500"><%= f.sesion_nombre %></strong><span><%= fecha(f.sesion_fecha) %></span></div></td>
+          <td class="der"><%= f.n_eval %></td>
+          <td class="der"><%= f.hechas %></td>
+          <td class="col-regla"><%- include('../partials/regla', { valor: f.promedio ?? 0, est: f.estado, delgada: true, umbral: f.umbral }) %></td>
+          <td class="der puntaje"><%= f.promedio ?? '—' %></td>
+          <td><%- include('../partials/estado', { e: f.estado }) %></td>
+          <td class="der"><form method="post" action="/admin/participante/<%= f.id %>/borrar"><input type="hidden" name="volver" value="/admin/participantes<%= filtro.qs %>"><button class="link peligro" data-confirmar="¿Eliminar a <%= f.nombre %>?" data-detalle="Se borrarán sus <%= f.n_eval %> evaluaciones recibidas y <%= f.hechas %> hechas. No se puede deshacer." data-escribir="<%= f.matricula %>">Eliminar</button></form></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  </div>
+  <div class="tabla-pie"><span>Al eliminar un participante se borran las evaluaciones que hizo y las que recibió.</span><span><%= filas.length %> participantes</span></div>
+</div>
+<%- include('../partials/footer') %>

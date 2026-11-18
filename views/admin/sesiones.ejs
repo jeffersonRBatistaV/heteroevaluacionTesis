@@ -1,0 +1,65 @@
+<%- include('../partials/header', { titulo: 'Sesiones' }) %>
+<%- include('_nav', { tituloPagina: 'Sesiones' }) %>
+
+<p class="ink-2" style="max-width:70ch">Una sesión es un ciclo de evaluación con su nombre y su fecha. Cada estudiante entra a una sesión y evalúa a los demás integrantes de esa misma sesión. Al ingresar solo aparecen las sesiones abiertas, o la del enlace que compartas.</p>
+
+<% if (!sesiones.length) { %>
+  <div class="panel vacio"><strong>Aún no hay sesiones</strong><span>Crea la primera con el formulario de abajo.</span></div>
+<% } else { %>
+  <div class="tarjetas">
+    <% sesiones.forEach(s => { %>
+      <div class="panel sesion-card">
+        <div class="acciones" style="justify-content:space-between">
+          <span class="chip-info <%= s.abierta ? 'abierta' : 'cerrada' %>"><%- icono(s.abierta ? 'check' : 'reloj', 12) %><%= s.abierta ? 'Abierta' : 'Cerrada' %></span>
+          <span class="mono muted small"><%= fecha(s.fecha) %></span>
+        </div>
+        <div>
+          <h3 style="font-size:1.15rem"><a class="enlace-card" href="/admin/sesion/<%= s.id %>"><%= s.nombre %></a></h3>
+          <span class="muted small"><%= s.rubrica_general ? 'Usa la rúbrica general' : 'Rúbrica propia' %></span>
+        </div>
+        <div class="cifras">
+          <span><b><%= s.n_participantes %></b>participantes</span>
+          <span><b><%= s.n_evaluaciones %></b>evaluaciones</span>
+        </div>
+        <div class="acciones card-acciones">
+          <div class="acciones">
+            <a class="btn sec chico" href="/admin/sesion/<%= s.id %>">Abrir</a>
+            <button type="button" class="btn sec chico" data-copiar-texto="<%= origen %>/s/<%= s.codigo %>">Copiar enlace</button>
+          </div>
+          <form method="post" action="/admin/sesion/<%= s.id %>/borrar">
+            <input type="hidden" name="volver" value="lista">
+            <button class="link peligro" data-confirmar="¿Eliminar la sesión <%= s.nombre %>?" data-detalle="Se borrarán <%= s.n_participantes %> participantes y <%= s.n_evaluaciones %> evaluaciones<%= s.rubrica_general ? '' : ', y su rúbrica propia' %>. No se puede deshacer." data-escribir="<%= s.nombre %>" data-accion="Eliminar sesión">Eliminar</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<section class="panel panel-pad" style="display:grid; gap:16px" id="nueva">
+  <div><h2>Nueva sesión</h2><p class="muted small">Ponle un nombre y una fecha; puedes cambiarlos después.</p></div>
+  <% if (error) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></div><% } %>
+  <form method="post" action="/admin/sesiones" style="display:grid; gap:16px">
+    <div class="form-linea" style="grid-template-columns: minmax(0,2fr) minmax(0,1fr)">
+      <div class="campo"><label for="s-nombre">Nombre</label><input id="s-nombre" name="nombre" maxlength="120" required placeholder="Defensa de tesis · Sección 01"></div>
+      <div class="campo"><label for="s-fecha">Fecha</label><input id="s-fecha" name="fecha" type="date" value="<%= hoy %>" required></div>
+    </div>
+    <div class="campo">
+      <span style="font-weight:600; font-size:.88rem">Rúbrica</span>
+      <div class="opcion-rubrica">
+        <label><input type="radio" name="rubrica" value="general" checked><span><strong>Rúbrica general</strong><small>La misma rúbrica para todas las sesiones que la usen.</small></span></label>
+        <label><input type="radio" name="rubrica" value="propia"><span><strong>Rúbrica propia</strong><small>Una copia de la general que puedes editar solo para esta sesión.</small></span></label>
+      </div>
+    </div>
+    <div class="campo">
+      <label for="s-umbral">Umbral de aprobación</label>
+      <div class="umbral-campo">
+        <span>Aprueba con más de</span>
+        <input id="s-umbral" name="umbral" type="number" min="1" max="100" step="0.5" value="80" required>
+        <span>puntos de 100</span>
+      </div>
+    </div>
+    <div><button class="btn"><%- icono('mas', 16) %>Crear sesión</button></div>
+  </form>
+</section>
+<%- include('../partials/footer') %>

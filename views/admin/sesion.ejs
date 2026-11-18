@@ -1,0 +1,203 @@
+<%- include('../partials/header', { titulo: s.nombre }) %>
+<%
+  const entraron = lista.filter(f => f.ultimo_ingreso).length;
+  const rubricaOk = Math.abs(suma - 100) < 0.001 && criterios.length > 0;
+  const enlace = origen + '/s/' + s.codigo;
+  const prep = [
+    { ok: lista.length > 0, titulo: 'Lista de participantes', txt: lista.length ? lista.length + ' estudiantes cargados' : 'Aún no hay nadie en la lista', ir: '#lista', accion: 'Cargar lista' },
+    { ok: rubricaOk, titulo: 'Rúbrica', txt: rubricaOk ? criterios.length + ' criterios, suman 100' : 'Los criterios no suman 100', ir: '#rubrica', accion: 'Revisar rúbrica' },
+    { ok: true, titulo: 'Umbral de aprobación', txt: 'Aprueba con más de ' + s.umbral + ' puntos', ir: '#rubrica', accion: 'Cambiar' },
+    { ok: !!s.abierta, titulo: 'Sesión abierta', txt: s.abierta ? 'Los estudiantes pueden evaluar' : 'Cerrada: solo consulta', ir: '#compartir', accion: s.abierta ? 'Copiar enlace' : 'Abrir en Ajustes' },
+  ];
+%>
+<a href="/admin/sesiones" class="volver"><%- icono('flecha', 16) %>Todas las sesiones</a>
+
+<div class="page-head">
+  <div>
+    <div class="acciones" style="margin-bottom:8px">
+      <span class="chip-info <%= s.abierta ? 'abierta' : 'cerrada' %>"><%- icono(s.abierta ? 'check' : 'reloj', 12) %><%= s.abierta ? 'Abierta' : 'Cerrada' %></span>
+      <span class="muted small"><%= fecha(s.fecha) %></span>
+    </div>
+    <h1><%= s.nombre %></h1>
+  </div>
+  <div class="acciones">
+    <a class="btn sec" href="/admin?sesion=<%= s.id %>">Ver dashboard</a>
+    <a class="btn sec" href="/admin/exportar.xlsx?sesion=<%= s.id %>"><%- icono('descargar', 16) %>Excel</a>
+    <form method="post" action="/admin/sesion/<%= s.id %>/estado"><button class="btn <%= s.abierta ? 'sec' : '' %>"><%= s.abierta ? 'Cerrar sesión' : 'Abrir sesión' %></button></form>
+  </div>
+</div>
+<% if (error) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></div><% } %>
+
+<section class="panel" aria-label="Preparación de la sesión">
+  <ul class="prep" id="prep">
+    <% prep.forEach(p => { %>
+      <li class="<%= p.ok ? 'hecho' : '' %>">
+        <span class="marca-prep" aria-hidden="true"><%- p.ok ? icono('check', 14) : '' %></span>
+        <div><strong><%= p.titulo %></strong><span><%= p.txt %></span><a href="<%= p.ir %>" data-ir-pestana><%= p.accion %></a></div>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+
+<section class="kpis kpis-3" aria-label="Resumen de la sesión">
+  <a class="panel kpi kpi-link" href="#lista" data-ir-pestana><span class="label">Participantes</span><span class="valor"><%= s.n_participantes %></span><span class="nota"><%= entraron %> ya entraron</span></a>
+  <a class="panel kpi kpi-link" href="/admin/evaluaciones?sesion=<%= s.id %>"><span class="label">Evaluaciones</span><span class="valor"><%= s.n_evaluaciones %></span><span class="nota">Ver el registro</span></a>
+  <a class="panel kpi kpi-link" href="#rubrica" data-ir-pestana><span class="label">Aprueba con más de</span><span class="valor"><%= s.umbral %><small> puntos</small></span><span class="nota"><%= s.rubrica_general ? 'Rúbrica general' : 'Rúbrica propia' %></span></a>
+</section>
+
+<nav class="pestanas" aria-label="Secciones de la sesión" id="pestanas-sesion">
+  <a href="#lista" data-pestana="lista">Participantes <span class="cuenta"><%= lista.length %></span></a>
+  <a href="#compartir" data-pestana="compartir">Compartir enlace</a>
+  <a href="#rubrica" data-pestana="rubrica">Rúbrica y umbral</a>
+  <a href="#datos" data-pestana="datos">Ajustes</a>
+</nav>
+
+<!-- Participantes -->
+<section class="panel panel-pestana" id="lista" data-panel-pestana="lista">
+  <div class="panel-head">
+    <div>
+      <h2>Lista de participantes</h2>
+      <p>Solo pueden entrar los estudiantes de esta lista, con su nombre y su matrícula tal como aparecen aquí.</p>
+    </div>
+    <a class="small" href="/admin/plantilla.xlsx"><%- icono('descargar', 14) %> Plantilla de Excel</a>
+  </div>
+
+  <% if (importe) { %>
+  <div class="importe" role="status">
+    <div class="importe-cifras">
+      <strong>Importación de <%= importe.archivo %></strong>
+      <span><b><%= importe.agregados %></b> agregados</span>
+      <% if (importe.actualizados) { %><span><b><%= importe.actualizados %></b> nombres actualizados</span><% } %>
+      <% if (importe.sinCambios) { %><span><b><%= importe.sinCambios %></b> ya estaban en la lista</span><% } %>
+      <% if (importe.totalOmitidas) { %><span class="omit"><b><%= importe.totalOmitidas %></b> filas omitidas</span><% } %>
+    </div>
+    <% if (!importe.conEncabezado) { %><p class="muted small">No se encontraron encabezados "Nombre" y "Matrícula", así que se usó la columna A como nombre y la B como matrícula.</p><% } %>
+    <% if (importe.omitidas.length) { %>
+      <ul class="omitidas">
+        <% importe.omitidas.forEach(o => { %><li>Fila <%= o.fila %>: <%= o.texto %>. <%= o.motivo.charAt(0).toUpperCase() + o.motivo.slice(1) %>.</li><% }) %>
+        <% if (importe.totalOmitidas > importe.omitidas.length) { %><li class="muted">Y <%= importe.totalOmitidas - importe.omitidas.length %> filas más.</li><% } %>
+      </ul>
+    <% } %>
+  </div>
+  <% } %>
+
+  <div class="lista-acciones">
+    <form method="post" action="/admin/sesion/<%= s.id %>/importar" enctype="multipart/form-data" class="cargar" id="form-importar">
+      <div class="campo">
+        <label for="archivo">Importar desde Excel o CSV</label>
+        <input id="archivo" name="archivo" type="file" accept=".xlsx,.csv" required>
+        <span class="ayuda">Columnas "Nombre completo" (o "Nombre" y "Apellidos") y "Matrícula". Máximo 2 MB.</span>
+      </div>
+      <label class="check-linea"><input type="checkbox" name="actualizar" value="1"> Actualizar el nombre si la matrícula ya está en la lista</label>
+      <div><button class="btn sec">Importar lista</button></div>
+    </form>
+    <form method="post" action="/admin/sesion/<%= s.id %>/participantes" class="cargar" id="form-agregar">
+      <div class="campo"><label for="n-nombre">Agregar a mano</label><input id="n-nombre" name="nombre" maxlength="80" required placeholder="Nombre completo"></div>
+      <div class="campo"><label for="n-matricula" class="sr-only">Matrícula</label><input id="n-matricula" name="matricula" maxlength="30" required placeholder="Matrícula" autocapitalize="characters"></div>
+      <div><button class="btn"><%- icono('mas', 16) %>Agregar participante</button></div>
+    </form>
+  </div>
+
+  <% if (lista.length > 8) { %>
+    <div style="padding: 0 24px 14px"><label class="buscar"><span class="sr-only">Buscar en la lista</span><%- icono('buscar', 16) %><input type="search" id="buscar" placeholder="Buscar por nombre o matrícula" data-filtro="#tabla-lista tbody tr:not(.fila-editar)"></label></div>
+  <% } %>
+  <div class="tabla-wrap">
+    <table class="tabla" id="tabla-lista">
+      <thead><tr><th>Participante</th><th>Entró</th><th class="der solo-ancho">Recibidas</th><th class="der solo-ancho">Hechas</th><th class="der">Promedio</th><th></th></tr></thead>
+      <tbody>
+        <% if (!lista.length) { %><tr><td colspan="6"><div class="vacio"><strong>La lista está vacía</strong><span>Importa un Excel o agrega a los estudiantes a mano. Mientras la lista esté vacía nadie podrá entrar a esta sesión.</span></div></td></tr><% } %>
+        <% lista.forEach(f => { %>
+          <tr data-texto="<%= (f.nombre + ' ' + f.matricula).toLowerCase() %>">
+            <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %></span></a></td>
+            <td><% if (f.ultimo_ingreso) { %><span class="chip-info abierta"><%- icono('check', 12) %>Sí</span><% } else { %><span class="chip-info cerrada">Aún no</span><% } %></td>
+            <td class="der solo-ancho"><%= f.n_eval %></td>
+            <td class="der solo-ancho"><%= f.hechas %></td>
+            <td class="der puntaje"><%= f.promedio ?? '—' %></td>
+            <td class="der" style="white-space:nowrap">
+              <button type="button" class="link" data-editar="<%= f.id %>">Editar</button>
+              <form method="post" action="/admin/participante/<%= f.id %>/borrar"><input type="hidden" name="volver" value="/admin/sesion/<%= s.id %>#lista"><button class="link peligro" data-confirmar="¿Quitar a <%= f.nombre %> de la lista?" data-detalle="Ya no podrá entrar, y se borrarán sus <%= f.n_eval %> evaluaciones recibidas y <%= f.hechas %> hechas. No se puede deshacer." data-escribir="<%= f.matricula %>" data-accion="Quitar de la lista">Quitar</button></form>
+            </td>
+          </tr>
+          <tr class="fila-editar" data-de="<%= f.id %>" hidden>
+            <td colspan="6">
+              <form method="post" action="/admin/participante/<%= f.id %>/editar" class="form-linea" style="grid-template-columns: minmax(0,2fr) minmax(0,1fr) auto auto">
+                <input type="hidden" name="volver" value="/admin/sesion/<%= s.id %>#lista">
+                <input name="nombre" value="<%= f.nombre %>" maxlength="80" required aria-label="Nombre completo">
+                <input name="matricula" value="<%= f.matricula %>" maxlength="30" required aria-label="Matrícula">
+                <button class="btn chico">Guardar</button>
+                <button type="button" class="btn sec chico" data-editar="<%= f.id %>">Cancelar</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="tabla-pie"><span><%= entraron %> de <%= lista.length %> ya entraron</span><span><%= lista.length %> en la lista</span></div>
+</section>
+
+<!-- Compartir -->
+<section class="panel panel-pad compartir panel-pestana" id="compartir" data-panel-pestana="compartir">
+  <div>
+    <h2>Enlace de la sesión</h2>
+    <p class="muted small" style="margin-top:4px">Compártelo con tus estudiantes. Al abrirlo entran directo a esta sesión con su nombre y matrícula.<%= s.abierta ? '' : ' La sesión está cerrada: con el enlace solo podrán consultar su resultado.' %></p>
+  </div>
+  <div class="enlace">
+    <input id="enlace-sesion" value="<%= enlace %>" readonly aria-label="Enlace de la sesión">
+    <button type="button" class="btn" data-copiar="#enlace-sesion">Copiar enlace</button>
+  </div>
+  <form method="post" action="/admin/sesion/<%= s.id %>/enlace" class="acciones">
+    <button class="link" data-confirmar="¿Generar un enlace nuevo?" data-detalle="El enlace actual dejará de funcionar. Quienes lo tengan necesitarán el nuevo para entrar." data-accion="Generar enlace nuevo">Generar un enlace nuevo</button>
+    <span class="muted small">El anterior dejará de funcionar.</span>
+  </form>
+</section>
+
+<!-- Rúbrica y umbral -->
+<section class="panel panel-pad panel-pestana" id="rubrica" data-panel-pestana="rubrica">
+  <div class="acciones" style="justify-content:space-between">
+    <div><h2>Rúbrica y umbral de aprobación</h2><p class="muted small" style="margin-top:4px"><%= criterios.length %> criterios activos. Con Excelente en todos se obtienen <%= suma %> puntos.</p></div>
+    <a class="btn sec" href="/admin/rubrica/<%= s.rubrica_id %>"><%= s.rubrica_general ? 'Editar la rúbrica general' : 'Editar la rúbrica de esta sesión' %></a>
+  </div>
+  <form method="post" action="/admin/sesion/<%= s.id %>/rubrica" style="display:grid; gap:16px" id="form-rubrica-sesion">
+    <div class="opcion-rubrica">
+      <label><input type="radio" name="rubrica" value="general" <%= s.rubrica_general ? 'checked' : '' %>><span><strong>Rúbrica general</strong><small>Compartida con las demás sesiones que la usan. Sus cambios afectan a todas.</small></span></label>
+      <label><input type="radio" name="rubrica" value="propia" <%= s.rubrica_general ? '' : 'checked' %>><span><strong>Rúbrica propia</strong><small><%= s.rubrica_general ? 'Se crea como copia de la general y la editas solo para esta sesión.' : 'Esta sesión ya tiene su propia rúbrica.' %></small></span></label>
+    </div>
+    <div class="campo">
+      <label for="umbral">Umbral de aprobación</label>
+      <div class="umbral-campo">
+        <span>Aprueba con más de</span>
+        <input id="umbral" name="umbral" type="number" min="1" max="100" step="0.5" value="<%= s.umbral %>" required>
+        <span>puntos de 100</span>
+        <span class="ayuda">Con <%= s.umbral %>, un promedio de <%= s.umbral %> exacto no aprueba; <%= Math.round((s.umbral + 0.01) * 100) / 100 %> sí.</span>
+      </div>
+    </div>
+    <div class="acciones"><button class="btn">Guardar rúbrica y umbral</button><span class="muted small">Cambiar la rúbrica no recalcula las evaluaciones ya guardadas; cambiar el umbral sí actualiza los estados.</span></div>
+  </form>
+  <ul class="desglose" style="border:1px solid var(--linea); border-radius: var(--r)">
+    <% criterios.forEach(c => { %>
+      <li style="grid-template-columns: minmax(0,1fr) auto"><div class="nom"><strong><%= c.nombre %></strong><span><%= escala.map((t, k) => t + ' ' + [c.p1, c.p2, c.p3, c.p4, c.p5][k]).join(', ') %></span></div><div class="pct">hasta <%= c.puntos %></div></li>
+    <% }) %>
+  </ul>
+</section>
+
+<!-- Ajustes -->
+<div class="panel-pestana" id="datos" data-panel-pestana="datos">
+  <section class="panel panel-pad" style="display:grid; gap:14px">
+    <div><h2>Nombre, fecha y estado</h2><p class="muted small" style="margin-top:4px">Los estudiantes ven el nombre y la fecha al elegir la sesión.</p></div>
+    <form method="post" action="/admin/sesion/<%= s.id %>" class="form-linea tres">
+      <div class="campo"><label for="e-nombre">Nombre</label><input id="e-nombre" name="nombre" value="<%= s.nombre %>" maxlength="120" required></div>
+      <div class="campo"><label for="e-fecha">Fecha</label><input id="e-fecha" name="fecha" type="date" value="<%= s.fecha %>" required></div>
+      <div class="campo"><label for="e-abierta">Estado</label>
+        <select id="e-abierta" name="abierta"><option value="1" <%= s.abierta ? 'selected' : '' %>>Abierta</option><option value="0" <%= s.abierta ? '' : 'selected' %>>Cerrada</option></select>
+      </div>
+      <button class="btn">Guardar</button>
+    </form>
+  </section>
+  <section class="panel panel-pad zona-peligro" style="display:grid; gap:10px">
+    <h2>Eliminar sesión</h2>
+    <p class="ink-2 small">Borra la sesión con todos sus participantes y evaluaciones. No se puede deshacer. Si solo quieres que no se use más, ciérrala.</p>
+    <form method="post" action="/admin/sesion/<%= s.id %>/borrar"><button class="btn peligro" data-confirmar="¿Eliminar la sesión <%= s.nombre %>?" data-detalle="Se borrarán <%= s.n_participantes %> participantes y <%= s.n_evaluaciones %> evaluaciones<%= s.rubrica_general ? '' : ', y la rúbrica propia de la sesión' %>. No se puede deshacer." data-escribir="<%= s.nombre %>" data-accion="Eliminar sesión"><%- icono('basura', 16) %>Eliminar sesión</button></form>
+  </section>
+</div>
+<%- include('../partials/footer') %>

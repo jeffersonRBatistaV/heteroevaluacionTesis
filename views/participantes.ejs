@@ -1,0 +1,75 @@
+<%- include('partials/header', { titulo: 'Evaluar' }) %>
+<%
+  const hechas = lista.filter(p => p.mi_puntaje != null).length;
+  const pct = lista.length ? Math.round(hechas / lista.length * 100) : 0;
+  const pendientes = lista.filter(p => p.mi_puntaje == null);
+  const ordenada = [...pendientes, ...lista.filter(p => p.mi_puntaje != null)];
+  const requeridas = Math.ceil(lista.length * config.porcentajeParaVer / 100 - 1e-9);
+  const faltanVer = Math.max(0, requeridas - hechas);
+  const primerNombre = usuario.nombre.split(' ')[0];
+%>
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><%= usuario.sesion_nombre %>, <%= fecha(usuario.sesion_fecha) %></p>
+    <h1>Hola, <%= primerNombre %></h1>
+    <p class="lead"><%= usuario.abierta ? 'Eres jurado de tus compañeros: califica cada defensa con la rúbrica. Puedes corregir una evaluación mientras la sesión siga abierta.' : 'La sesión está cerrada. Puedes revisar tus evaluaciones, pero ya no cambiarlas.' %></p>
+  </div>
+</div>
+
+<% if (!lista.length) { %>
+  <div class="panel vacio">
+    <strong>Todavía no hay compañeros en la lista</strong>
+    <span>Tu profesor aún no ha cargado al resto de la sesión. Vuelve a entrar más tarde.</span>
+  </div>
+<% } else { %>
+  <% if (usuario.abierta && pendientes.length) { const sig = pendientes[0]; %>
+    <section class="siguiente" aria-label="Siguiente evaluación">
+      <div>
+        <h2>Te toca evaluar a <%= sig.nombre %></h2>
+        <p><%= pendientes.length === 1 ? 'Es la última defensa que te falta.' : 'Te faltan ' + pendientes.length + ' defensas por evaluar.' %> <%= faltanVer ? 'Tu resultado se desbloquea con ' + faltanVer + ' más.' : '' %></p>
+      </div>
+      <a class="btn grande" href="/evaluar/<%= sig.id %>">Evaluar a <%= sig.nombre.split(' ')[0] %></a>
+    </section>
+  <% } else if (!pendientes.length) { %>
+    <section class="siguiente listo" aria-label="Evaluaciones completas">
+      <div>
+        <h2>Evaluaste a todos tus compañeros</h2>
+        <p>Gracias por completar tu parte como jurado. Ya puedes consultar tu resultado.</p>
+      </div>
+      <a class="btn grande" href="/mi-resultado">Ver mi resultado</a>
+    </section>
+  <% } %>
+
+  <section class="panel panel-pad progreso-eval" aria-label="Tu avance">
+    <div><strong><%= hechas %> de <%= lista.length %></strong> <span class="muted">defensas evaluadas</span></div>
+    <div class="minibar" role="img" aria-label="<%= pct %>% completado"><span style="width: <%= pct %>%"></span></div>
+    <span class="muted num"><%= pct %> %</span>
+    <p class="aviso-ver small">
+      <% if (faltanVer) { %><%- icono('reloj', 15) %>Tu resultado se desbloquea al evaluar al <%= config.porcentajeParaVer %> % de tus compañeros: te falta<%= faltanVer === 1 ? '' : 'n' %> <strong><%= faltanVer %></strong>.<% } else { %><%- icono('check', 15) %>Ya puedes ver <a href="/mi-resultado">tu resultado</a>.<% } %>
+    </p>
+  </section>
+
+  <section class="seccion-lista">
+    <div class="lista-titulo" style="margin-bottom:12px">
+      <h2>Compañeros de la sesión</h2>
+      <% if (lista.length > 6) { %>
+        <label class="buscar"><span class="sr-only">Buscar compañero</span><%- icono('buscar', 16) %><input type="search" id="buscar" placeholder="Buscar por nombre" data-filtro=".grid-personas > li"></label>
+      <% } %>
+    </div>
+    <ul class="grid-personas">
+      <% ordenada.forEach(p => { const hecho = p.mi_puntaje != null; %>
+        <li data-texto="<%= p.nombre.toLowerCase() %>">
+          <div class="persona-card <%= hecho ? 'hecho' : '' %>">
+            <span class="avatar" aria-hidden="true"><%- hecho ? icono('check', 18) : iniciales(p.nombre) %></span>
+            <div class="info">
+              <strong><%= p.nombre %></strong>
+              <span><%= hecho ? 'Evaluado: le diste ' + p.mi_puntaje + ' de 100' : 'Pendiente' %></span>
+            </div>
+            <a class="btn <%= hecho || !usuario.abierta ? 'sec' : '' %> chico" href="/evaluar/<%= p.id %>"><%= !usuario.abierta ? 'Ver' : hecho ? 'Corregir' : 'Evaluar' %></a>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+<% } %>
+<%- include('partials/footer') %>

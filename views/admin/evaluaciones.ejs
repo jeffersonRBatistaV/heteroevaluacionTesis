@@ -1,0 +1,21 @@
+<%- include('../partials/header', { titulo: 'Evaluaciones' }) %>
+<%- include('_nav', { tituloPagina: 'Evaluaciones' }) %>
+<%- include('_filtros', { accion: '/admin/evaluaciones' }) %>
+<% const alcance = filtro.sesion ? 'de la sesión ' + filtro.sesion.nombre : 'de todas las sesiones'; %>
+
+<div class="page-head">
+  <p class="ink-2">Registro de todas las evaluaciones: quién evaluó a quién, con qué puntaje y qué criterios marcó.</p>
+  <label class="buscar"><span class="sr-only">Buscar</span><%- icono('buscar', 16) %><input type="search" id="buscar" placeholder="Buscar por nombre o matrícula" data-filtro="#evals tbody tr"></label>
+</div>
+
+<div class="panel" id="evals">
+  <%- include('_tabla-evals', { lista: evaluaciones, volver: '/admin/evaluaciones' + filtro.qs, ocultar: null }) %>
+  <div class="tabla-pie"><span>Las evaluaciones editadas muestran la fecha de su último cambio.</span><span><%= evaluaciones.length %> evaluaciones</span></div>
+</div>
+
+<section class="panel panel-pad zona-peligro" style="display:grid; gap:10px">
+  <h2>Borrar las evaluaciones <%= alcance %></h2>
+  <p class="ink-2 small">Elimina las evaluaciones <%= alcance %> y deja a los participantes y la rúbrica intactos. Cambia el filtro de arriba para elegir otro alcance. Úsalo si cambias la rúbrica y quieres empezar de cero. No se puede deshacer.</p>
+  <form method="post" action="/admin/reiniciar-evaluaciones"><input type="hidden" name="sesion" value="<%= filtro.sesionId || '' %>"><button class="btn peligro" data-confirmar="¿Borrar las evaluaciones <%= alcance %>?" data-detalle="Se borrarán <%= evaluaciones.length %> evaluaciones. Los participantes y la rúbrica se conservan. No se puede deshacer." data-escribir="BORRAR" data-accion="Borrar evaluaciones"><%- icono('basura', 16) %>Borrar evaluaciones <%= alcance %></button></form>
+</section>
+<%- include('../partials/footer') %>

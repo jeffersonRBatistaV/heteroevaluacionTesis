@@ -1,0 +1,36 @@
+<% const esPanelPie = esAdmin && !usuario && ruta.startsWith('/admin'); %>
+</main>
+<% if (esPanelPie) { %>
+  </div>
+</div>
+<% } else { %>
+<footer class="pie">
+  <div class="wrap">
+    <span><%= usuario ? 'Apruebas con más de ' + usuario.umbral + ' puntos de 100 en ' + usuario.sesion_nombre + '.' : 'Cada sesión tiene su rúbrica y su umbral de aprobación.' %></span>
+  </div>
+</footer>
+<% } %>
+<dialog id="dlg-confirmar" class="dialogo" aria-labelledby="d-titulo">
+  <form method="dialog" class="dialogo-in">
+    <div class="dialogo-icono" aria-hidden="true"><%- icono('alerta', 22) %></div>
+    <div class="dialogo-txt">
+      <h2 id="d-titulo" data-d-titulo>Confirmar</h2>
+      <p data-d-detalle></p>
+    </div>
+    <div class="campo" data-d-escribir hidden>
+      <label for="d-entrada">Para confirmar, escribe <strong class="objetivo" data-d-objetivo></strong></label>
+      <input id="d-entrada" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="acciones dialogo-acciones">
+      <button type="button" class="btn sec" data-d-cancelar>Cancelar</button>
+      <button type="button" class="btn peligro" data-d-ok>Eliminar</button>
+    </div>
+  </form>
+</dialog>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css">
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+<script>window.TUTORIAL_PENDIENTE = <%= tutorialPendiente ? 'true' : 'false' %>;</script>
+<script src="/tour.js?v=<%= assetVer %>"></script>
+<script src="/app.js?v=<%= assetVer %>"></script>
+</body>
+</html>

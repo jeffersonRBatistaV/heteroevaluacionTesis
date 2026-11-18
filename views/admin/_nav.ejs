@@ -1,0 +1,10 @@
+<%# Encabezado de las páginas del panel. La navegación vive en la barra lateral. %>
+<div class="page-head">
+  <div>
+    <h1><%= tituloPagina %></h1>
+    <% if (typeof bajada !== 'undefined' && bajada) { %><p class="lead"><%= bajada %></p><% } %>
+  </div>
+  <div class="acciones">
+    <a class="btn sec" href="/admin/exportar.xlsx<%= filtro ? filtro.qs : '' %>"><%- icono('descargar', 16) %>Exportar a Excel</a>
+  </div>
+</div>

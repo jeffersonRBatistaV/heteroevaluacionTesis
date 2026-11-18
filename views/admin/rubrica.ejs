@@ -1,0 +1,65 @@
+<%- include('../partials/header', { titulo: 'Rúbrica' }) %>
+<%- include('_nav', { tituloPagina: rub.general ? 'Rúbrica general' : rub.nombre }) %>
+<% if (!rub.general && usadaPor[0]) { %><a href="/admin/sesion/<%= usadaPor[0].id %>" class="volver"><%- icono('flecha', 16) %><%= usadaPor[0].nombre %></a><% } %>
+<div class="acciones">
+  <span class="chip-info"><%= rub.general ? 'Rúbrica general' : 'Rúbrica propia de sesión' %></span>
+  <span class="muted small"><%= usadaPor.length ? 'La usa' + (usadaPor.length === 1 ? ' la sesión ' : 'n ' + usadaPor.length + ' sesiones: ') + usadaPor.map(s => s.nombre).join(', ') : 'Ninguna sesión la usa todavía' %></span>
+</div>
+
+<p class="ink-2" style="max-width:74ch">Cada criterio se califica con una de cinco opciones: <%= escala.join(' · ') %>. Tú decides cuántos puntos da cada opción en cada criterio, de menor a mayor. Con "<%= escala[4] %>" en todos los criterios activos se deben obtener exactamente 100 puntos. Desactiva un criterio para ocultarlo sin perder su historial.</p>
+<% if (error) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></div><% } %>
+
+<form method="post" action="/admin/rubrica/<%= rub.id %>" id="form-rubrica" style="display:grid; gap:14px">
+  <div id="filas-rubrica" class="crit-lista">
+    <% criterios.forEach((c, i) => { const key = c._key || c.id; const pts = [c.p1, c.p2, c.p3, c.p4, c.p5]; %>
+      <div class="panel crit-card">
+        <input type="hidden" name="id" value="<%= c.id %>">
+        <input type="hidden" name="key" value="<%= key %>">
+        <div class="crit-card-cab">
+          <input class="mini mono-in" name="orden" type="number" value="<%= c.orden %>" aria-label="Orden" title="Orden">
+          <input name="nombre" value="<%= c.nombre %>" maxlength="120" required placeholder="Nombre del criterio" aria-label="Nombre del criterio">
+          <label class="check-linea"><input type="checkbox" name="activo" value="<%= key %>" <%= c.activo ? 'checked' : '' %>> Activo</label>
+          <% if (c.id) { %><button class="link peligro" formaction="/admin/criterio/<%= c.id %>/borrar" formnovalidate data-confirmar="¿Eliminar el criterio <%= c.nombre %>?" data-detalle="Se quitará de la rúbrica y de las evaluaciones que lo calificaron. Los puntajes ya guardados no se recalculan. Si solo quieres dejar de usarlo, desmarca Activo.">Eliminar</button><% } %>
+        </div>
+        <textarea name="descripcion" rows="2" maxlength="2000" placeholder="Descripción: qué debe cumplir el evaluado" aria-label="Descripción"><%= c.descripcion %></textarea>
+        <div class="puntos-opciones">
+          <% escala.forEach((palabra, k) => { %>
+            <label class="punto-opcion"><span><%= palabra %></span><input class="mono-in" name="p<%= k + 1 %>" type="number" step="0.01" min="0" value="<%= pts[k] ?? '' %>" required aria-label="Puntos de <%= palabra %>"></label>
+          <% }) %>
+          <button type="button" class="link" data-repartir title="Reparte 20 %, 40 %, 60 % y 80 % del puntaje de <%= escala[4] %>">Repartir desde <%= escala[4] %></button>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  <div class="panel barra-rubrica">
+    <div class="acciones">
+      <span class="muted small">Con "<%= escala[4] %>" en todo</span>
+      <span class="suma <%= Math.abs(suma - 100) < 0.001 ? 'ok' : 'mal' %>" id="suma"><span id="suma-num"><%= suma %></span> / 100</span>
+    </div>
+    <div class="acciones">
+      <button type="button" class="btn sec" id="agregar-criterio"><%- icono('mas', 16) %>Agregar criterio</button>
+      <button class="btn">Guardar rúbrica</button>
+    </div>
+  </div>
+  <p class="muted small">Si cambias la rúbrica cuando ya hay evaluaciones, los puntajes guardados no se recalculan. Para empezar de cero, borra las evaluaciones de la sesión en la sección Evaluaciones.</p>
+</form>
+<template id="tpl-criterio">
+  <div class="panel crit-card">
+    <input type="hidden" name="id" value="">
+    <input type="hidden" name="key" value="">
+    <div class="crit-card-cab">
+      <input class="mini mono-in" name="orden" type="number" value="" aria-label="Orden" title="Orden">
+      <input name="nombre" maxlength="120" required placeholder="Nombre del criterio" aria-label="Nombre del criterio">
+      <label class="check-linea"><input type="checkbox" name="activo" value="" checked> Activo</label>
+      <button type="button" class="link peligro" data-quitar>Quitar</button>
+    </div>
+    <textarea name="descripcion" rows="2" maxlength="2000" placeholder="Descripción: qué debe cumplir el evaluado" aria-label="Descripción"></textarea>
+    <div class="puntos-opciones">
+      <% escala.forEach((palabra, k) => { %>
+        <label class="punto-opcion"><span><%= palabra %></span><input class="mono-in" name="p<%= k + 1 %>" type="number" step="0.01" min="0" value="<%= [2, 4, 6, 8, 10][k] %>" required aria-label="Puntos de <%= palabra %>"></label>
+      <% }) %>
+      <button type="button" class="link" data-repartir>Repartir desde <%= escala[4] %></button>
+    </div>
+  </div>
+</template>
+<%- include('../partials/footer') %>

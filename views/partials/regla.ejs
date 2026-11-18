@@ -1,0 +1,10 @@
+<%# Regla de puntaje 0–100 con la marca del umbral. Parámetros: valor, est, delgada, escala, umbral %>
+<% const _u = typeof umbral !== 'undefined' && umbral != null ? umbral : config.notaAprobacion; %>
+<div class="regla <%= typeof est !== 'undefined' ? est : '' %> <%= typeof delgada !== 'undefined' && delgada ? 'delgada' : '' %>"
+     style="--v: <%= Math.max(0, Math.min(100, Number(valor) || 0)) %>; --umbral: <%= _u %>"
+     role="img" aria-label="Puntaje <%= valor ?? 0 %> de 100; umbral de aprobación <%= _u %>">
+  <span class="fill"></span><span class="umbral"></span>
+</div>
+<% if (typeof escala !== 'undefined' && escala) { %>
+  <div class="regla-escala" aria-hidden="true"><span>0</span><span class="u" style="left: <%= _u %>%"><%= _u %></span><span>100</span></div>
+<% } %>

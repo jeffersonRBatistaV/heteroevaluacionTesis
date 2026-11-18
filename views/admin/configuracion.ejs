@@ -1,0 +1,30 @@
+<%- include('../partials/header', { titulo: 'Configuración' }) %>
+<%- include('_nav', { tituloPagina: 'Configuración' }) %>
+
+<section class="panel panel-pad" style="display:grid; gap:16px; max-width:560px">
+  <div>
+    <h2>Contraseña del administrador</h2>
+    <p class="muted small">Es la contraseña del ingreso "Administrador". Usa al menos 8 caracteres y evita contraseñas fáciles de adivinar.</p>
+  </div>
+  <% if (error) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></div><% } %>
+  <form method="post" action="/admin/configuracion/clave" id="form-clave" style="display:grid; gap:14px">
+    <div class="campo">
+      <label for="c-actual">Contraseña actual</label>
+      <input id="c-actual" name="actual" type="password" autocomplete="current-password" required>
+    </div>
+    <div class="campo">
+      <label for="c-nueva">Nueva contraseña</label>
+      <input id="c-nueva" name="nueva" type="password" autocomplete="new-password" minlength="8" required>
+      <span class="ayuda">Mínimo 8 caracteres.</span>
+    </div>
+    <div class="campo">
+      <label for="c-repetir">Repite la nueva contraseña</label>
+      <input id="c-repetir" name="repetir" type="password" autocomplete="new-password" minlength="8" required>
+    </div>
+    <div class="acciones">
+      <button class="btn">Cambiar contraseña</button>
+      <span class="muted small">Las demás sesiones de administrador se cerrarán.</span>
+    </div>
+  </form>
+</section>
+<%- include('../partials/footer') %>

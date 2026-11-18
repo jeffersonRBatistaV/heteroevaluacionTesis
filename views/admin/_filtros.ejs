@@ -1,0 +1,13 @@
+<%# Filtro por sesión (GET). Parámetro: accion %>
+<form method="get" action="<%= accion %>" class="filtros" data-autoenvio>
+  <div class="campo">
+    <label for="f-sesion">Sesión</label>
+    <select id="f-sesion" name="sesion">
+      <option value="0" <%= !filtro.sesionId ? 'selected' : '' %>>Todas las sesiones</option>
+      <% filtro.sesiones.forEach(s => { %>
+        <option value="<%= s.id %>" <%= filtro.sesionId === s.id ? 'selected' : '' %>><%= s.nombre %> · <%= fecha(s.fecha) %><%= s.abierta ? '' : ' (cerrada)' %></option>
+      <% }) %>
+    </select>
+  </div>
+  <noscript><button class="btn sec">Aplicar</button></noscript>
+</form>

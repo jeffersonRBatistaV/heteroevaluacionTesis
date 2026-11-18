@@ -1,0 +1,15 @@
+<%# Sello académico con la nota. Parámetros: nota, est ('aprobado' | 'reprobado' | 'pendiente'), animar %>
+<%
+  const _txt = est === 'aprobado' ? 'APROBADO' : est === 'reprobado' ? 'NO APROBADO' : 'EN EVALUACIÓN';
+  const _aro = `${_txt} · HETEROEVALUACIÓN DE TESIS · `;
+%>
+<div class="sello <%= est %> <%= typeof animar !== 'undefined' && animar ? 'estampar' : '' %>" role="img" aria-label="Nota <%= nota ?? 'sin calcular' %> de 100, <%= _txt.toLowerCase() %>">
+  <svg viewBox="0 0 200 200" aria-hidden="true">
+    <defs><path id="aro-sello" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"/></defs>
+    <circle class="aro" cx="100" cy="100" r="96"/>
+    <circle class="aro-fino" cx="100" cy="100" r="66"/>
+    <text class="texto-aro"><textPath href="#aro-sello" textLength="480" lengthAdjust="spacing"><%= _aro %></textPath></text>
+    <text class="nota" x="100" y="112" text-anchor="middle"><%= nota ?? '—' %></text>
+    <text class="de" x="100" y="134" text-anchor="middle">de 100</text>
+  </svg>
+</div>

@@ -1,0 +1,20 @@
+<%# Desglose por criterio. Parámetro: desglose (de q.rendimientoCriterios) %>
+<ul class="desglose">
+  <% desglose.forEach(c => { %>
+    <li class="desglose-crit">
+      <div class="nom">
+        <strong><%= c.nombre %></strong>
+        <span><%= c.n ? 'Más elegida: ' + c.frecuente + ' · ' + c.n + ' calificación' + (c.n === 1 ? '' : 'es') : 'Sin calificaciones todavía' %></span>
+      </div>
+      <div class="dist" role="img" aria-label="<%= escala.map((p, i) => p + ': ' + c.conteo[i]).join(', ') %>">
+        <% escala.forEach((p, i) => { const pct = c.n ? Math.round(c.conteo[i] / c.n * 100) : 0; %>
+          <span class="dist-col" title="<%= p %>: <%= c.conteo[i] %>">
+            <span class="dist-barra"><span style="height: <%= pct %>%"></span></span>
+            <span class="dist-txt"><%= p.slice(0, 3) %>.</span>
+          </span>
+        <% }) %>
+      </div>
+      <div class="pct"><%= c.promedio ?? '—' %><small> / <%= c.puntos %></small></div>
+    </li>
+  <% }) %>
+</ul>

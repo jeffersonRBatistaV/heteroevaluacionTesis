@@ -1,0 +1,24 @@
+<%# Tabla de evaluaciones. Parámetros: lista, volver, ocultar ('evaluador' | 'evaluado' | null) %>
+<div class="tabla-wrap">
+<table class="tabla">
+  <thead><tr>
+    <% if (ocultar !== 'evaluador') { %><th>Evaluador</th><% } %>
+    <% if (ocultar !== 'evaluado') { %><th>Evaluado</th><% } %>
+    <th>Sesión</th><th class="der">Puntaje</th><th>Criterios cumplidos</th><th>Fecha (UTC)</th><th></th>
+  </tr></thead>
+  <tbody>
+    <% if (!lista.length) { %><tr><td colspan="7"><div class="vacio"><span>Sin evaluaciones.</span></div></td></tr><% } %>
+    <% lista.forEach(e => { %>
+      <tr data-texto="<%= (e.evaluador + ' ' + e.evaluador_mat + ' ' + e.evaluado + ' ' + e.evaluado_mat).toLowerCase() %>">
+        <% if (ocultar !== 'evaluador') { %><td><a href="/admin/participante/<%= e.evaluador_id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= e.evaluador %></strong><span><%= e.evaluador_mat %></span></a></td><% } %>
+        <% if (ocultar !== 'evaluado') { %><td><a href="/admin/participante/<%= e.evaluado_id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= e.evaluado %></strong><span><%= e.evaluado_mat %></span></a></td><% } %>
+        <td><div class="persona"><span style="font-weight:500"><%= e.sesion_nombre %></span></div></td>
+        <td class="der puntaje"><%= e.puntaje_total %></td>
+        <td class="criterios-txt"><%= e.criterios || 'Ningún criterio marcado' %></td>
+        <td class="mono muted" style="white-space:nowrap"><%= e.actualizado_en %></td>
+        <td class="der"><form method="post" action="/admin/evaluacion/<%= e.id %>/borrar"><input type="hidden" name="volver" value="<%= volver %>"><button class="link peligro" data-confirmar="¿Eliminar esta evaluación?" data-detalle="<%= e.evaluador %> → <%= e.evaluado %> (<%= e.puntaje_total %> puntos). El promedio de <%= e.evaluado %> se recalculará.">Eliminar</button></form></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+</div>

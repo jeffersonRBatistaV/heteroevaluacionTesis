@@ -1,0 +1,60 @@
+<%- include('partials/header', { titulo: 'Evaluar a ' + evaluado.nombre }) %>
+<a href="/participantes" class="volver"><%- icono('flecha', 16) %>Volver a la lista</a>
+<div class="page-head">
+  <div class="evaluando">
+    <span class="avatar" aria-hidden="true"><%= iniciales(evaluado.nombre) %></span>
+    <div>
+      <p class="eyebrow"><%= existente ? 'Corrigiendo tu evaluación' : 'Llevas ' + hechas + ' de ' + totalCompaneros + ' defensas evaluadas' %></p>
+      <h1><%= evaluado.nombre %></h1>
+    </div>
+  </div>
+</div>
+<div style="display:grid; gap:6px; margin-top:-6px">
+  <p class="ink-2">Elige en cada criterio la opción que mejor describe la defensa de <strong><%= evaluado.nombre %></strong>, de <%= escala[0] %> a <%= escala[4] %>. Hay que calificar todos.</p>
+  <% if (!cerrada) { %><p class="atajos">Con teclado: pulsa <kbd>1</kbd> a <kbd>5</kbd> para calificar y pasar al siguiente criterio.</p><% } %>
+</div>
+
+<% if (cerrada) { %><div class="flash err" role="status"><%- icono('reloj', 16) %><span>La sesión está cerrada. Esta evaluación ya no se puede modificar.</span></div><% } %>
+<form method="post" action="/evaluar/<%= evaluado.id %>" id="form-eval" style="display:grid; gap:16px">
+  <fieldset <%= cerrada ? 'disabled' : '' %> style="border:0; padding:0; margin:0; min-width:0">
+  <ul class="rubrica">
+    <% criterios.forEach(c => { const pts = [c.p1, c.p2, c.p3, c.p4, c.p5]; %>
+      <li>
+        <fieldset class="panel crit-escala" data-criterio="<%= c.id %>">
+          <legend class="sr-only"><%= c.nombre %></legend>
+          <div class="crit-cab">
+            <div class="cuerpo">
+              <strong><%= c.nombre %></strong>
+              <% if (c.descripcion) { %><span class="texto"><%= c.descripcion %></span><% } %>
+            </div>
+            <span class="pts" data-obtenido><%= selecciones[c.id] ? pts[selecciones[c.id] - 1] : '—' %> / <%= c.p5 %> pts</span>
+          </div>
+          <div class="opciones" role="radiogroup" aria-label="<%= c.nombre %>">
+            <% escala.forEach((palabra, i) => { %>
+              <label class="opcion o<%= i + 1 %>">
+                <input type="radio" name="c_<%= c.id %>" value="<%= i + 1 %>" data-p="<%= pts[i] %>" required <%= selecciones[c.id] === i + 1 ? 'checked' : '' %>>
+                <span class="opcion-txt"><%= palabra %></span>
+                <span class="opcion-pts"><%= pts[i] %> pts</span>
+              </label>
+            <% }) %>
+          </div>
+        </fieldset>
+      </li>
+    <% }) %>
+  </ul>
+  </fieldset>
+  <% if (!criterios.length) { %><div class="panel vacio"><strong>La rúbrica de esta sesión no tiene criterios</strong><span>Avísale al administrador.</span></div><% } %>
+  <div class="panel barra-eval">
+    <div>
+      <div class="total"><span id="total">0</span><small>/100</small></div>
+      <div class="veredicto" id="veredicto"></div>
+    </div>
+    <div>
+      <div class="regla" id="regla-eval" style="--v: 0; --umbral: <%= usuario.umbral %>"><span class="fill"></span><span class="umbral"></span></div>
+      <div class="regla-escala" aria-hidden="true"><span>0</span><span class="u" style="left: <%= usuario.umbral %>%"><%= usuario.umbral %></span><span>100</span></div>
+    </div>
+    <button class="btn grande" id="btn-enviar" <%= cerrada || !criterios.length ? 'disabled' : '' %>><%= existente ? 'Guardar cambios' : 'Guardar y seguir' %></button>
+  </div>
+</form>
+<script>window.UMBRAL = <%= usuario.umbral %>;</script>
+<%- include('partials/footer') %>

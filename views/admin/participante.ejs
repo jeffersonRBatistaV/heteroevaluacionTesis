@@ -1,0 +1,39 @@
+<%- include('../partials/header', { titulo: p.nombre }) %>
+<%- include('_nav', { tituloPagina: 'Participantes' }) %>
+<a href="/admin/participantes" class="volver"><%- icono('flecha', 16) %>Todos los participantes</a>
+
+<section class="panel panel-pad resultado-hero">
+  <%- include('../partials/sello', { nota: resumen.promedio, est: estado, animar: false }) %>
+  <div class="detalle">
+    <div class="evaluando">
+      <span class="avatar" aria-hidden="true"><%= iniciales(p.nombre) %></span>
+      <div><h2 style="font-size:1.35rem"><%= p.nombre %></h2><span class="mono muted"><%= p.matricula %></span> <span class="muted small">· <a href="/admin/sesion/<%= p.sesion_id %>"><%= p.sesion_nombre %></a> · <%= fecha(p.sesion_fecha) %></span></div>
+    </div>
+    <div class="acciones">
+      <%- include('../partials/estado', { e: estado }) %>
+      <span class="muted small"><%= recibidas.length %> recibidas · <%= hechas.length %> hechas · registrado <%= p.creado_en %> UTC</span>
+    </div>
+    <%- include('../partials/regla', { valor: resumen.promedio ?? 0, est: estado, escala: true, umbral: p.umbral }) %>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>Desglose por criterio</h2><p>Puntos promedio en cada criterio y cuántas veces recibió cada calificación.</p></div></div>
+  <div style="margin-top:12px"><%- include('../partials/desglose', { desglose }) %></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>Evaluaciones recibidas</h2><p>Lo que sus compañeros marcaron al evaluarlo.</p></div></div>
+  <div style="margin-top:12px"><%- include('_tabla-evals', { lista: recibidas, volver: '/admin/participante/' + p.id, ocultar: 'evaluado' }) %></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>Evaluaciones hechas</h2><p>Las evaluaciones que este estudiante hizo a otros.</p></div></div>
+  <div style="margin-top:12px"><%- include('_tabla-evals', { lista: hechas, volver: '/admin/participante/' + p.id, ocultar: 'evaluador' }) %></div>
+</section>
+
+<form method="post" action="/admin/participante/<%= p.id %>/borrar" class="acciones">
+  <button class="btn peligro" data-confirmar="¿Eliminar a <%= p.nombre %>?" data-detalle="Se borrarán sus <%= recibidas.length %> evaluaciones recibidas y <%= hechas.length %> hechas. No se puede deshacer." data-escribir="<%= p.matricula %>" data-accion="Eliminar participante"><%- icono('basura', 16) %>Eliminar participante</button>
+  <span class="muted small">Borra también todas sus evaluaciones hechas y recibidas.</span>
+</form>
+<%- include('../partials/footer') %>

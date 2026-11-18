@@ -1,0 +1,54 @@
+<%- include('partials/header', { titulo: 'Mi resultado' }) %>
+<div class="page-head">
+  <div>
+    <h1>Mi resultado</h1>
+    <p class="lead">Tu nota es el promedio de las calificaciones que te dieron tus compañeros como jurado. Apruebas con más de <%= usuario.umbral %> puntos.</p>
+  </div>
+</div>
+
+<% if (!avance.habilitado) { const pct = avance.requeridas ? Math.round(avance.hechas / avance.requeridas * 100) : 0; %>
+<section class="panel panel-pad bloqueo" id="bloqueo">
+  <div class="bloqueo-icono" aria-hidden="true">
+    <svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="12" height="8.5" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg>
+  </div>
+  <div class="bloqueo-txt">
+    <h2>Termina de evaluar para ver tu nota</h2>
+    <p class="ink-2">Tu resultado se desbloquea cuando evalúas al menos al <%= config.porcentajeParaVer %> % de tus compañeros. Llevas <strong><%= avance.hechas %> de <%= avance.requeridas %></strong>; te falta<%= avance.faltan === 1 ? '' : 'n' %> <strong><%= avance.faltan %></strong>.</p>
+    <div class="progreso-eval">
+      <div class="minibar" style="flex:1; min-width:160px" role="img" aria-label="<%= pct %>% del mínimo"><span style="width: <%= Math.min(100, pct) %>%"></span></div>
+      <span class="muted num"><%= avance.hechas %> de <%= avance.requeridas %></span>
+    </div>
+    <div><a class="btn" href="/participantes">Seguir evaluando</a></div>
+  </div>
+</section>
+<% } else { const r = { ...resumen, umbral: usuario.umbral }; const e = estado(r); const falta = Math.max(0, config.minEvaluaciones - resumen.n_eval); %>
+<section class="panel panel-pad resultado-hero">
+  <%- include('partials/sello', { nota: resumen.promedio, est: e, animar: true }) %>
+  <div class="detalle">
+    <h2><%= e === 'aprobado' ? 'Aprobaste tu defensa' : e === 'reprobado' ? 'Esta vez no alcanzaste el umbral' : 'Tu nota aún no es definitiva' %></h2>
+    <div class="acciones">
+      <%- include('partials/estado', { e }) %>
+      <span class="muted small"><%= resumen.n_eval %> compañero<%= resumen.n_eval === 1 ? '' : 's' %> te calificaron</span>
+    </div>
+    <div>
+      <%- include('partials/regla', { valor: resumen.promedio ?? 0, est: e, escala: true, umbral: usuario.umbral }) %>
+    </div>
+    <p class="small ink-2">
+      <% if (falta > 0) { %>Te falta<%= falta === 1 ? '' : 'n' %> <%= falta %> calificación<%= falta === 1 ? '' : 'es' %> para tener un estado definitivo.
+      <% } else if (e === 'aprobado') { %>Superas el umbral de <%= usuario.umbral %> puntos de esta sesión.
+      <% } else { %>El umbral de esta sesión es más de <%= usuario.umbral %> puntos. Revisa el desglose para ver en qué criterios puedes mejorar.<% } %>
+    </p>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Desglose por criterio</h2>
+      <p>Puntos promedio que obtuviste en cada criterio y cuántas veces te dieron cada calificación.</p>
+    </div>
+  </div>
+  <div style="margin-top:12px"><%- include('partials/desglose', { desglose }) %></div>
+</section>
+<% } %>
+<%- include('partials/footer') %>
