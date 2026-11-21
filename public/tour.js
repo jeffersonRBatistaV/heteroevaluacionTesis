@@ -9,9 +9,8 @@
     ingreso: {
       pasos: [
         paso('.conmutador', 'Estudiante o administrador', 'Usa este botón para cambiar entre el ingreso de estudiante y el del administrador (profesor). Es la misma pantalla para los dos.'),
-        paso('#sesion', 'Elige tu sesión', 'Elige la sesión en la que te registró tu profesor. Si entraste con su enlace, ya viene elegida.'),
-        paso('#matricula', 'Tu usuario', 'Tu usuario es tu matrícula, tal como aparece en la lista del profesor.'),
-        paso('#clave-est', 'Tu contraseña', 'La primera vez es tu matrícula; al entrar crearás una propia. Si la olvidas, pide a tu profesor que la restablezca.'),
+        paso('#matricula', 'Tu matrícula', 'Entras con tu matrícula y la contraseña que creaste al registrarte.'),
+        paso('.cambio-modo', 'Primera vez', 'Si aún no tienes cuenta, pulsa "Registrarme": escribe tu matrícula, tu nombre y una contraseña dos veces. Guárdala bien: no se puede recuperar por tu cuenta.'),
         paso('[data-panel="estudiante"] .btn', 'Entrar', 'Listo: al entrar verás a tus compañeros de sesión para evaluarlos.', 'top'),
       ],
     },
@@ -20,9 +19,9 @@
     participantes: {
       pasos: [
         paso('.page-head h1', 'Eres jurado', 'Aquí evalúas a tus compañeros de sesión, y ellos te evalúan a ti.'),
-        paso('.siguiente', 'Tu siguiente evaluación', 'Aquí aparece quién expone ahora y el botón para evaluarlo. Cuando tu profesor abra o cierre una ronda, la página se actualiza sola.'),
+        paso('.siguiente', 'Tu siguiente evaluación', 'Aquí aparece quién expone ahora y el botón para evaluar su trabajo. Cuando tu profesor abra o cierre una ronda, la página se actualiza sola.'),
         paso('.progreso-eval', 'Tu avance', 'Cuántos compañeros llevas evaluados. Tu resultado se desbloquea cuando evalúas al menos al 95 % de ellos.'),
-        paso('.grid-personas li:first-child', 'Evaluar a un compañero', 'Pulsa "Evaluar" para abrir la rúbrica. Si ya lo evaluaste, verás el puntaje que le diste y podrás editarlo mientras la sesión siga abierta.'),
+        paso('.grid-personas li:first-child', 'Evaluar a un compañero', 'Pulsa "Evaluar" para abrir la rúbrica. Si ya enviaste tu evaluación, verás el puntaje que le diste y podrás editarlo mientras la sesión siga abierta.'),
         paso('.nav a[href="/mi-resultado"]', 'Mi resultado', 'Tu promedio, si apruebas y cómo te calificaron en cada criterio. Solo tú puedes ver tu resultado.'),
         paso('#btn-tutorial', 'Vuelve cuando quieras', 'Este botón abre el tutorial de la página en la que estés.', 'left'),
       ],
@@ -32,7 +31,7 @@
         paso('.rubrica li:first-child .crit-escala', 'Califica cada criterio', 'Elige la opción que mejor describe el desempeño de tu compañero en este criterio, de No aceptable (0) a Excelente (4). Cada nivel muestra los puntos que da y qué describe.'),
         paso('.rubrica li:first-child .pts', 'Puntos del criterio', 'Los puntos que obtiene con la opción elegida, sobre el máximo del criterio.', 'left'),
         paso('.barra-eval .total', 'Puntaje en vivo', 'El total se actualiza mientras marcas.', 'top'),
-        paso('#regla-eval', 'El umbral de aprobación', 'La marca vertical es la nota de aprobación. La nota final de tu compañero es el promedio de todas las evaluaciones que recibe.', 'top'),
+        paso('#regla-eval', 'El mínimo para aprobar', 'La marca vertical es el mínimo para aprobar. La nota final de tu compañero es el promedio de todas las evaluaciones que recibe.', 'top'),
         paso('.barra-eval .btn', 'Guardar', 'Envía la evaluación cuando hayas calificado todos los criterios. Puedes volver a editarla mientras la sesión siga abierta.', 'top'),
       ],
     },
@@ -52,7 +51,7 @@
         paso('.filtros', 'Filtra por sesión', 'Todo el dashboard (y el Excel) se ajusta a la sesión que elijas. Con "Todas las sesiones" verás el promedio de cada sesión comparado.'),
         paso('.kpis', 'Indicadores', 'Promedio general, tasa de aprobación, participantes y evaluaciones registradas.'),
         paso('[data-chart="histograma"]', 'Distribución de promedios', 'Cuántos estudiantes hay en cada tramo de nota. Pasa el cursor sobre una barra para ver quiénes son.', 'top'),
-        paso('[data-chart="criterios"]', 'Rendimiento por criterio', 'Puntos promedio de cada criterio frente a su máximo. Pasa el cursor para ver cuántas veces se eligió cada opción.', 'top'),
+        paso('[data-chart="criterios"]', 'Rendimiento por criterio', 'Puntos promedio de cada criterio frente a su máximo. Pasa el cursor para ver cuántas veces se eligió cada nivel.', 'top'),
         paso('a[href^="/admin/exportar"]', 'Exportar a Excel', 'Descarga un .xlsx con resumen, resultados, el registro de evaluaciones y el cumplimiento por criterio.', 'left'),
         paso('.lateral-nav a[href="/admin/sesiones"]', 'Empieza por una sesión', 'Crea una sesión con nombre y fecha, carga la lista de estudiantes y comparte su enlace.', 'right'),
       ],
@@ -67,8 +66,8 @@
     'admin-sesion': {
       pasos: [
         paso('#prep', 'Lista de preparación', 'Antes de compartir el enlace revisa estos cuatro puntos: lista cargada, rúbrica que suma 100, umbral de aprobación y sesión abierta.'),
-        paso('.kpis-3', 'Resumen', 'Participantes, evaluaciones y el umbral de la sesión. Haz clic para ir al detalle.'),
-        paso('#pestanas-sesion', 'Secciones de la sesión', 'Participantes, enlace para compartir, rúbrica y umbral, y ajustes. Cada pestaña muestra una sección.'),
+        paso('.kpis-3', 'Resumen', 'Participantes, evaluaciones y el mínimo para aprobar de la sesión. Haz clic para ir al detalle.'),
+        paso('#pestanas-sesion', 'Secciones de la sesión', 'Participantes, enlace para compartir, rúbrica y mínimo para aprobar, y ajustes. Cada pestaña muestra una sección.'),
         paso('#form-importar', 'Importar desde Excel', 'Carga la lista con nombre y matrícula. Verás cuántos se agregaron y qué filas se omitieron y por qué.', 'top'),
         paso('#lista .tabla-wrap', 'Quién ya entró', 'Por cada estudiante ves si ya entró, cuántas evaluaciones recibió e hizo, y su promedio. Puedes editarlo o quitarlo.', 'top'),
       ],
@@ -76,7 +75,7 @@
     'admin-rubrica': {
       pasos: [
         paso('#filas-rubrica .crit-card:first-child', 'Criterio', 'Cada criterio tiene un nombre, una descripción de lo que debe cumplir el evaluado y los puntos de cada una de sus cinco opciones.'),
-        paso('#filas-rubrica .crit-card:first-child .puntos-opciones', 'Puntos por opción', 'Decide cuántos puntos da cada opción, de menor a mayor. "Repartir" llena las demás a partir del puntaje de Excelente.', 'top'),
+        paso('#filas-rubrica .crit-card:first-child .puntos-opciones', 'Puntos y descripción por nivel', 'Decide cuántos puntos da cada nivel, de 0 a 4, y qué describe. "Repartir" llena las demás a partir del puntaje de Excelente.', 'top'),
         paso('#suma', 'Debe sumar 100', 'Con Excelente en todos los criterios activos se deben obtener exactamente 100 puntos para poder guardar.', 'top'),
         paso('#agregar-criterio', 'Agregar y guardar', 'Agrega criterios nuevos y guarda los cambios con "Guardar rúbrica".', 'top'),
       ],
@@ -98,7 +97,7 @@
     'admin-evaluaciones': {
       pasos: [
         paso('.filtros', 'Filtra', 'Elige una sesión.'),
-        paso('#evals', 'Registro', 'Quién evaluó a quién, con qué puntaje y qué criterios marcó.', 'top'),
+        paso('#evals', 'Registro', 'Quién evaluó a quién, con qué puntaje y qué nivel dio en cada criterio.', 'top'),
         paso('.zona-peligro', 'Borrado masivo', 'Borra las evaluaciones del filtro actual (por ejemplo, si cambiaste la rúbrica). Hay que escribir BORRAR para confirmar.', 'top'),
       ],
     },

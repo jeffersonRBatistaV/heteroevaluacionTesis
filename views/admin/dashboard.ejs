@@ -20,18 +20,18 @@
   <div class="panel kpi">
     <span class="label">Participantes</span>
     <span class="valor"><%= conteos.participantes %></span>
-    <span class="nota"><%= sinEvaluar %> sin evaluaciones recibidas</span>
+    <span class="nota"><%= sinEvaluar %> sin evaluaciones aún</span>
   </div>
   <div class="panel kpi">
     <span class="label">Evaluaciones</span>
     <span class="valor"><%= conteos.evaluaciones %></span>
-    <span class="nota"><%= conteos.evaluadores_activos %> estudiantes han evaluado</span>
+    <span class="nota"><%= plural(conteos.evaluadores_activos, 'estudiante ha evaluado', 'estudiantes han evaluado') %></span>
   </div>
 </section>
 
 <section class="panel">
   <div class="panel-head">
-    <div><h2>Estado de los participantes</h2><p><%= nota != null ? 'Aprobado: promedio de más de ' + nota + ' puntos (umbral de la sesión).' : 'Cada estudiante se compara con el umbral de su sesión.' %> Pendiente: aún sin calificaciones suficientes.</p></div>
+    <div><h2>Estado de los participantes</h2><p><%= nota != null ? 'Aprobado: promedio de ' + nota + ' puntos o más (mínimo de la sesión).' : 'Cada estudiante se compara con el mínimo de su sesión.' %> Pendiente: aún sin calificaciones suficientes.</p></div>
   </div>
   <div class="chart-box" style="padding-top:16px">
     <% const tot = estados.aprobado + estados.reprobado + estados.pendiente; %>
@@ -54,16 +54,16 @@
 
 <div class="dash-grid">
   <section class="panel">
-    <div class="panel-head"><div><h2>Distribución de promedios</h2><p>Participantes por tramo de 10 puntos. La línea marca la nota de aprobación.</p></div></div>
+    <div class="panel-head"><div><h2>Distribución de promedios</h2><p>Participantes por tramo de 10 puntos. La línea marca el mínimo para aprobar.</p></div></div>
     <div class="chart-box"><div class="chart" data-chart="histograma" aria-label="Histograma de promedios"></div></div>
   </section>
   <section class="panel">
-    <div class="panel-head"><div><h2>Rendimiento por criterio</h2><p><%= filtro.sesion ? 'Puntos promedio de cada criterio como porcentaje de su máximo. Pasa el cursor para ver cuántas veces se eligió cada opción.' : 'Elige una sesión: cada sesión puede tener su propia rúbrica.' %></p></div></div>
+    <div class="panel-head"><div><h2>Rendimiento por criterio</h2><p><%= filtro.sesion ? 'Puntos promedio de cada criterio como porcentaje de su máximo. Pasa el cursor para ver cuántas veces se eligió cada nivel.' : 'Elige una sesión: cada sesión puede tener su propia rúbrica.' %></p></div></div>
     <div class="chart-box"><div class="chart" data-chart="criterios" aria-label="Rendimiento por criterio"></div></div>
   </section>
   <% if (datos.porSesion && datos.porSesion.length > 1) { %>
   <section class="panel ancho">
-    <div class="panel-head"><div><h2>Promedio por sesión</h2><p>Media de los promedios de cada sesión, de la más antigua a la más reciente. Pasa el cursor para ver el umbral de cada una.</p></div></div>
+    <div class="panel-head"><div><h2>Promedio por sesión</h2><p>Media de los promedios de cada sesión, de la más antigua a la más reciente. Pasa el cursor para ver el mínimo para aprobar de cada una.</p></div></div>
     <div class="chart-box"><div class="chart" data-chart="sesiones" aria-label="Promedio por sesión"></div></div>
   </section>
   <% } %>
@@ -99,8 +99,8 @@
           <% necesitan.forEach(f => { %>
             <tr>
               <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %> · <%= f.sesion_nombre %></span></a></td>
-              <td class="der"><span class="mono"><%= f.n_eval %></span> <span class="muted small">recibidas</span></td>
-              <td class="der"><span class="mono"><%= f.hechas %></span> <span class="muted small">hechas</span></td>
+              <td class="der"><span class="mono"><%= f.n_eval %></span> <span class="muted small"><%= f.n_eval === 1 ? 'recibida' : 'recibidas' %></span></td>
+              <td class="der"><span class="mono"><%= f.hechas %></span> <span class="muted small"><%= f.hechas === 1 ? 'hecha' : 'hechas' %></span></td>
             </tr>
           <% }) %>
         </tbody>

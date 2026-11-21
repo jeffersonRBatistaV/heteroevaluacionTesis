@@ -32,6 +32,7 @@
   --mal: #b42318;
   --mal-txt: #9a1d14;
   --mal-lav: #fbeae8;
+  --mal-sobre: #ffffff;
   --pend: #a86f0a;
   --pend-txt: #7c5207;
   --pend-lav: #fbf2e1;
@@ -56,7 +57,7 @@
     --papel: #0a0a0a; --hoja: #141414; --hoja-2: #1c1c1c; --tinta: #f5f5f5; --tinta-2: #c7c7c7; --tenue: #8f8f8f;
     --linea: #2a2a2a; --linea-2: #3a3a3a; --accion: #f5f5f5; --accion-2: #ffffff; --accion-txt: #0a0a0a; --accion-lav: #232323;
     --laton: #f5f5f5; --laton-txt: #f5f5f5; --laton-lav: #232323; --serie: #e6e6e6; --serie-pista: #2c2c2c;
-    --ok: #4bb878; --ok-txt: #7fd3a1; --ok-lav: #12291b; --mal: #ef6b5f; --mal-txt: #f5a39b; --mal-lav: #341614;
+    --ok: #4bb878; --ok-txt: #7fd3a1; --ok-lav: #12291b; --mal: #ef6b5f; --mal-txt: #f5a39b; --mal-lav: #341614; --mal-sobre: #1a0806;
     --pend: #e0a83a; --pend-txt: #f0c97a; --pend-lav: #2f240c; --rejilla: #242424;
     --lateral: #000000; --lateral-txt: #a8a8a8; --lateral-act: #ffffff;
     --inv-fondo: #f5f5f5; --inv-texto: #0a0a0a; --inv-tenue: rgba(10, 10, 10, .68);
@@ -68,7 +69,7 @@
   --papel: #0a0a0a; --hoja: #141414; --hoja-2: #1c1c1c; --tinta: #f5f5f5; --tinta-2: #c7c7c7; --tenue: #8f8f8f;
   --linea: #2a2a2a; --linea-2: #3a3a3a; --accion: #f5f5f5; --accion-2: #ffffff; --accion-txt: #0a0a0a; --accion-lav: #232323;
   --laton: #f5f5f5; --laton-txt: #f5f5f5; --laton-lav: #232323; --serie: #e6e6e6; --serie-pista: #2c2c2c;
-  --ok: #4bb878; --ok-txt: #7fd3a1; --ok-lav: #12291b; --mal: #ef6b5f; --mal-txt: #f5a39b; --mal-lav: #341614;
+  --ok: #4bb878; --ok-txt: #7fd3a1; --ok-lav: #12291b; --mal: #ef6b5f; --mal-txt: #f5a39b; --mal-lav: #341614; --mal-sobre: #1a0806;
   --pend: #e0a83a; --pend-txt: #f0c97a; --pend-lav: #2f240c; --rejilla: #242424;
   --lateral: #000000; --lateral-txt: #a8a8a8; --lateral-act: #ffffff;
   --inv-fondo: #f5f5f5; --inv-texto: #0a0a0a; --inv-tenue: rgba(10, 10, 10, .68);
@@ -168,8 +169,8 @@ main .flash { box-shadow: none; animation: none; }
 .btn:active { transform: translateY(1px); }
 .btn.sec { background: var(--hoja); color: var(--tinta); border-color: var(--linea-2); }
 .btn.sec:hover { background: var(--hoja-2); color: var(--tinta); }
-.btn.peligro { background: var(--mal); color: #fff; }
-.btn.peligro:hover { background: var(--mal-txt); }
+.btn.peligro { background: var(--mal); color: var(--mal-sobre); }
+.btn.peligro:hover { background: var(--mal-txt); color: var(--mal-sobre); }
 .btn.grande { padding: 13px 22px; font-size: 1.02rem; border-radius: 12px; }
 .btn.chico { padding: 7px 12px; font-size: .88rem; border-radius: 8px; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
@@ -601,6 +602,56 @@ fieldset[disabled] .opcion { cursor: default; opacity: .75; }
   .prep li:first-child { border-top: 0; }
   .enlace { grid-template-columns: minmax(0, 1fr); }
 }
+/* ---------- Ajustes de consistencia (revisión visual) ---------- */
+/* Evaluar: columna ancha para que los cinco niveles y sus descriptores quepan sin alargar la página */
+main.wrap.col-ancha { max-width: 1160px; }
+main.wrap.col-ancha .page-head, main.wrap.col-ancha > .volver, main.wrap.col-ancha > div:not(.toasts):not(.page-head) { max-width: 820px; }
+/* Formulario de dos campos (nombre y fecha): en una columna en el celular */
+.form-linea.dos { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+@media (max-width: 860px) { .form-linea.dos { grid-template-columns: minmax(0, 1fr); } }
+/* Pie: nombre a la izquierda, enlaces a la derecha */
+.pie-enlaces { display: flex; gap: 18px; flex-wrap: wrap; }
+.pie-enlaces a { color: var(--tinta-2); }
+/* Registro de evaluaciones: un criterio por línea */
+.crit-lista-txt { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+/* Acciones por fila de la lista de participantes */
+.tabla td.acciones-fila { white-space: nowrap; }
+.tabla td.acciones-fila > * + * { margin-left: 10px; }
+/* Editor de rúbrica: el descriptor crece con su texto para leerlo completo */
+.puntos-opciones .nivel-edit textarea { field-sizing: content; max-height: 18rem; }
+@media (max-width: 860px) {
+  /* En el celular el formulario de ingreso va primero; la explicación, debajo */
+  .inicio > #ingreso { order: -1; }
+}
+@media (max-width: 620px) {
+  /* Barra de evaluar compacta: total y botón en una fila, sin la regla */
+  .barra-eval { grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 10px 14px; }
+  .barra-eval > div:nth-child(2) { display: none; }
+  .barra-eval .btn { grid-column: auto; justify-self: end; padding: 11px 16px; font-size: .95rem; }
+  .barra-eval .total { font-size: 1.7rem; }
+  /* Indicadores de la sesión en una fila */
+  .kpis-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .kpis-3 .kpi { padding: 12px; }
+  .kpis-3 .kpi .label { font-size: .78rem; }
+  .kpis-3 .kpi .valor { font-size: 1.5rem; }
+  .kpis-3 .kpi .valor small { display: none; }
+  .kpis-3 .kpi .nota { font-size: .76rem; }
+  /* Registro de evaluaciones: la columna de niveles conserva un ancho legible; la tabla se desplaza de lado */
+  .tabla .criterios-txt { min-width: 250px; }
+  /* Los botones con textos largos (zona de peligro) pueden partirse en dos líneas */
+  .zona-peligro .btn { white-space: normal; text-align: left; }
+  /* Acciones de cada fila apiladas para que no se corten */
+  .tabla td.acciones-fila { white-space: normal; }
+  .tabla td.acciones-fila > * { display: block; margin: 0 0 4px auto; text-align: right; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+/* Evaluación en solo lectura: sin botón, la regla ocupa el espacio */
+.barra-eval:not(:has(#btn-enviar)) { grid-template-columns: auto minmax(0, 1fr); }
+/* Ingreso: enlace para pasar entre Entrar y Registrarme, y aviso de que la contraseña no se recupera */
+.cambio-modo { text-align: center; color: var(--tenue); font-size: .92rem; margin: 0; }
+.cambio-modo .link { font-size: .92rem; text-decoration: underline; text-underline-offset: 3px; }
+.aviso-clave { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 11px 13px; border-radius: var(--r); background: var(--pend-lav); color: var(--pend-txt); font-size: .88rem; font-weight: 700; line-height: 1.45; }
+.aviso-clave svg { flex: none; margin-top: 2px; }

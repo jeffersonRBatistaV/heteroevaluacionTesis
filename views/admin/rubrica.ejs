@@ -1,5 +1,5 @@
 <%- include('../partials/header', { titulo: 'Rúbrica' }) %>
-<%- include('_nav', { tituloPagina: rub.general ? 'Rúbrica general' : rub.nombre }) %>
+<%- include('_nav', { tituloPagina: rub.general ? 'Rúbrica general' : rub.nombre, exportar: false }) %>
 <% if (!rub.general && usadaPor[0]) { %><a href="/admin/sesion/<%= usadaPor[0].id %>" class="volver"><%- icono('flecha', 16) %><%= usadaPor[0].nombre %></a><% } %>
 <div class="acciones">
   <span class="chip-info"><%= rub.general ? 'Rúbrica general' : 'Rúbrica propia de sesión' %></span>

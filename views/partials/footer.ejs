@@ -6,8 +6,10 @@
 <% } else { %>
 <footer class="pie">
   <div class="wrap">
-    <span><%= usuario ? 'Apruebas con más de ' + usuario.umbral + ' puntos de 100 en ' + usuario.sesion_nombre + '.' : 'Cada sesión tiene su rúbrica y su umbral de aprobación.' %></span>
-    <% if (usuario && usuario.clave) { %><a href="/crear-clave" class="small">Cambiar mi contraseña</a><% } %>
+    <span>Heteroevaluación de tesis</span>
+    <nav class="pie-enlaces" aria-label="Enlaces del pie">
+      <% if (usuario && usuario.clave && ruta !== '/crear-clave') { %><a href="/crear-clave">Cambiar mi contraseña</a><% } %>
+    </nav>
   </div>
 </footer>
 <% } %>

@@ -47,7 +47,7 @@
     <div class="lateral-pie">
       <%- btnTutorial %>
       <a class="btn sec chico" href="/instructivo" target="_blank" rel="noopener">Instructivo</a>
-      <form method="post" action="/salir"><button class="btn sec chico">Cerrar sesión de administrador</button></form>
+      <form method="post" action="/salir"><button class="btn sec chico">Salir del panel</button></form>
     </div>
   </aside>
   <div class="contenido">
@@ -79,7 +79,7 @@
     <% } %>
   </div>
 </header>
-<main class="wrap<%= usuario ? ' col-estudiante' : '' %>">
+<main class="wrap<%= usuario ? (ruta.startsWith('/evaluar') ? ' col-ancha' : ' col-estudiante') : '' %>">
 <% } %>
 <div class="toasts" aria-live="polite">
   <% if (flashError) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= flashError %></span><button type="button" class="cerrar" aria-label="Cerrar aviso">×</button></div><% } %>

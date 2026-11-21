@@ -356,6 +356,13 @@ const q = {
       `SELECT p.*, s.nombre AS sesion_nombre, s.fecha AS sesion_fecha, s.abierta, s.rubrica_id, s.umbral, s.expositor_id
          FROM participantes p JOIN sesiones s ON s.id = p.sesion_id WHERE p.id = ?`
     ).get(id),
+  // Todas las inscripciones de una matrícula (puede estar en varias sesiones): abiertas y recientes primero
+  inscripcionesDe: (matricula) =>
+    db.prepare(
+      `SELECT p.*, s.nombre AS sesion_nombre, s.abierta, s.fecha AS sesion_fecha
+         FROM participantes p JOIN sesiones s ON s.id = p.sesion_id
+        WHERE p.matricula = ? ORDER BY s.abierta DESC, s.fecha DESC, s.id DESC`
+    ).all(matricula),
   participanteEnSesion: (sesionId, matricula) =>
     db.prepare('SELECT * FROM participantes WHERE sesion_id = ? AND matricula = ?').get(sesionId, matricula),
   crearParticipante: (sesionId, nombre, matricula) =>
@@ -364,6 +371,9 @@ const q = {
     db.prepare('UPDATE participantes SET nombre = ?, matricula = ? WHERE id = ?').run(nombre, matricula, id),
   // clave: hash "scrypt$…" o null para volver a la contraseña inicial (la matrícula)
   guardarClaveParticipante: (id, clave) => db.prepare('UPDATE participantes SET clave = ? WHERE id = ?').run(clave, id),
+  // Cambia la contraseña en todas las inscripciones de la matrícula que compartían la anterior
+  cambiarClaveMatricula: (matricula, anterior, nueva) =>
+    db.prepare('UPDATE participantes SET clave = ? WHERE matricula = ? AND clave = ?').run(nueva, matricula, anterior),
   marcarTutorialVisto: (id) => db.prepare('UPDATE participantes SET tutorial_visto = 1 WHERE id = ?').run(id),
   leerConfig: (k) => db.prepare('SELECT valor FROM config WHERE clave = ?').get(k)?.valor ?? null,
   escribirConfig: (k, v) => db.prepare('INSERT INTO config (clave, valor) VALUES (?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor').run(k, String(v)),
@@ -485,7 +495,7 @@ const q = {
     db.prepare(
       `SELECT e.id, e.puntaje_total, e.comentario, e.creado_en, e.actualizado_en, e.evaluador_id, e.evaluado_id,
               (SELECT GROUP_CONCAT(ec.criterio_id || ':' || ec.opcion || ':' || ec.puntos) FROM evaluacion_criterios ec WHERE ec.evaluacion_id = e.id) AS selecciones,
-              (SELECT GROUP_CONCAT(c.nombre || ': ' || CASE ec.opcion ${ESCALA_SQL} END || ' (' || printf('%g', ec.puntos) || ')', ' · ')
+              (SELECT GROUP_CONCAT(c.nombre || ': ' || CASE ec.opcion ${ESCALA_SQL} END || ' (' || (ec.opcion - 1) || '), ' || printf('%g', ec.puntos) || ' pts', ' · ')
                  FROM evaluacion_criterios ec JOIN criterios c ON c.id = ec.criterio_id
                 WHERE ec.evaluacion_id = e.id ORDER BY c.orden) AS criterios,
               a.nombre AS evaluador, a.matricula AS evaluador_mat,

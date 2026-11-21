@@ -16,7 +16,7 @@
     <p class="eyebrow"><%= usuario.sesion_nombre %>, <%= fecha(usuario.sesion_fecha) %></p>
     <h1>Hola, <%= primerNombre %></h1>
     <p class="lead"><%= usuario.abierta
-      ? 'Eres jurado de tus compañeros. Tu profesor abre la evaluación de cada uno cuando expone; califícalo durante su ronda.'
+      ? 'Eres jurado de tus compañeros. Tu profesor abre la evaluación de cada uno cuando expone; califica su trabajo durante esa ronda.'
       : 'La sesión está cerrada. Puedes revisar tus evaluaciones, pero ya no cambiarlas.' %></p>
   </div>
 </div>
@@ -40,7 +40,7 @@
         <div>
           <p class="vivo-txt"><span class="punto-vivo" aria-hidden="true"></span>Ronda abierta</p>
           <h2>Ahora expone <%= ev.nombre %></h2>
-          <p>Evalúalo antes de que tu profesor cierre su ronda.</p>
+          <p>Califica su trabajo antes de que tu profesor cierre la ronda.</p>
         </div>
         <a class="btn grande" href="/evaluar/<%= ev.id %>">Evaluar a <%= ev.nombre.split(' ')[0] %></a>
       </section>
@@ -63,7 +63,7 @@
   <% } %>
 
   <section class="panel panel-pad progreso-eval" aria-label="Tu avance">
-    <div><strong><%= hechas %> de <%= base.length %></strong> <span class="muted">defensas evaluadas de las que ya ocurrieron</span></div>
+    <div><span class="muted">Evaluaste a</span> <strong><%= hechas %> de <%= base.length %></strong> <span class="muted"><%= base.length === 1 ? 'compañero que ya expuso' : 'compañeros que ya expusieron' %></span></div>
     <div class="minibar" role="img" aria-label="<%= pct %>% completado"><span style="width: <%= pct %>%"></span></div>
     <span class="muted num"><%= pct %> %</span>
     <p class="aviso-ver small">
@@ -84,13 +84,13 @@
            const enRonda = p.id === exId && usuario.abierta;
            let estadoTxt, boton = null;
            if (enRonda) {
-             estadoTxt = hecho ? 'Expone ahora · le diste ' + p.mi_puntaje + ' de 100' : 'Expone ahora';
+             estadoTxt = hecho ? 'Expone ahora. Le diste ' + p.mi_puntaje + ' de 100' : 'Expone ahora';
              boton = hecho ? 'Corregir' : 'Evaluar';
            } else if (hecho) {
              estadoTxt = 'Evaluado: le diste ' + p.mi_puntaje + ' de 100';
              boton = 'Ver';
            } else {
-             estadoTxt = p.expuso_en ? 'Ya expuso · no lo evaluaste en su ronda' : 'Aún no expone';
+             estadoTxt = p.expuso_en ? 'Ya expuso; no enviaste tu evaluación en su ronda' : 'Aún no expone';
            }
       %>
         <li data-texto="<%= p.nombre.toLowerCase() %>">

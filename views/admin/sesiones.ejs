@@ -18,12 +18,12 @@
           <span class="muted small"><%= s.rubrica_general ? 'Usa la rúbrica general' : 'Rúbrica propia' %></span>
         </div>
         <div class="cifras">
-          <span><b><%= s.n_participantes %></b>participantes</span>
-          <span><b><%= s.n_evaluaciones %></b>evaluaciones</span>
+          <span><b><%= s.n_participantes %></b><%= s.n_participantes === 1 ? 'participante' : 'participantes' %></span>
+          <span><b><%= s.n_evaluaciones %></b><%= s.n_evaluaciones === 1 ? 'evaluación' : 'evaluaciones' %></span>
         </div>
         <div class="acciones card-acciones">
           <div class="acciones">
-            <a class="btn sec chico" href="/admin/sesion/<%= s.id %>">Abrir</a>
+            <a class="btn sec chico" href="/admin/sesion/<%= s.id %>">Ver sesión</a>
             <button type="button" class="btn sec chico" data-copiar-texto="<%= origen %>/s/<%= s.codigo %>">Copiar enlace</button>
           </div>
           <form method="post" action="/admin/sesion/<%= s.id %>/borrar">
@@ -40,7 +40,7 @@
   <div><h2>Nueva sesión</h2><p class="muted small">Ponle un nombre y una fecha; puedes cambiarlos después.</p></div>
   <% if (error) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></div><% } %>
   <form method="post" action="/admin/sesiones" style="display:grid; gap:16px">
-    <div class="form-linea" style="grid-template-columns: minmax(0,2fr) minmax(0,1fr)">
+    <div class="form-linea dos">
       <div class="campo"><label for="s-nombre">Nombre</label><input id="s-nombre" name="nombre" maxlength="120" required placeholder="Defensa de tesis · Sección 01"></div>
       <div class="campo"><label for="s-fecha">Fecha</label><input id="s-fecha" name="fecha" type="date" value="<%= hoy %>" required></div>
     </div>
@@ -52,11 +52,11 @@
       </div>
     </div>
     <div class="campo">
-      <label for="s-umbral">Umbral de aprobación</label>
+      <label for="s-umbral">Mínimo para aprobar</label>
       <div class="umbral-campo">
-        <span>Aprueba con más de</span>
+        <span>Aprueba con</span>
         <input id="s-umbral" name="umbral" type="number" min="1" max="100" step="0.5" value="80" required>
-        <span>puntos de 100</span>
+        <span>puntos o más, de 100</span>
       </div>
     </div>
     <div><button class="btn"><%- icono('mas', 16) %>Crear sesión</button></div>

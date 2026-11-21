@@ -1,8 +1,9 @@
 <%- include('partials/header', { titulo: 'Mi resultado' }) %>
 <div class="page-head">
   <div>
+    <p class="eyebrow"><%= usuario.sesion_nombre %>, <%= fecha(usuario.sesion_fecha) %></p>
     <h1>Mi resultado</h1>
-    <p class="lead">Tu nota es el promedio de las calificaciones que te dieron tus compañeros como jurado. Apruebas con más de <%= usuario.umbral %> puntos.</p>
+    <p class="lead">Tu nota es el promedio de las calificaciones que te dieron tus compañeros como jurado. Apruebas con <%= usuario.umbral %> puntos o más.</p>
   </div>
 </div>
 
@@ -25,7 +26,7 @@
 <section class="panel panel-pad resultado-hero">
   <%- include('partials/sello', { nota: resumen.promedio, est: e, animar: true }) %>
   <div class="detalle">
-    <h2><%= e === 'aprobado' ? 'Aprobaste tu defensa' : e === 'reprobado' ? 'Esta vez no alcanzaste el umbral' : 'Tu nota aún no es definitiva' %></h2>
+    <h2><%= e === 'aprobado' ? 'Aprobaste tu defensa' : e === 'reprobado' ? 'Esta vez no alcanzaste el mínimo' : 'Tu nota aún no es definitiva' %></h2>
     <div class="acciones">
       <%- include('partials/estado', { e }) %>
       <span class="muted small"><%= resumen.n_eval %> compañero<%= resumen.n_eval === 1 ? '' : 's' %> te calificaron</span>
@@ -35,8 +36,8 @@
     </div>
     <p class="small ink-2">
       <% if (falta > 0) { %>Te falta<%= falta === 1 ? '' : 'n' %> <%= falta %> calificación<%= falta === 1 ? '' : 'es' %> para tener un estado definitivo.
-      <% } else if (e === 'aprobado') { %>Superas el umbral de <%= usuario.umbral %> puntos de esta sesión.
-      <% } else { %>El umbral de esta sesión es más de <%= usuario.umbral %> puntos. Revisa el desglose para ver en qué criterios puedes mejorar.<% } %>
+      <% } else if (e === 'aprobado') { %>Alcanzas el mínimo de <%= usuario.umbral %> puntos de esta sesión.
+      <% } else { %>El mínimo para aprobar en esta sesión es <%= usuario.umbral %> puntos. Revisa el desglose para ver en qué criterios puedes mejorar.<% } %>
     </p>
   </div>
 </section>
@@ -45,7 +46,7 @@
   <div class="panel-head">
     <div>
       <h2>Desglose por criterio</h2>
-      <p>Puntos promedio que obtuviste en cada criterio y cuántas veces te dieron cada calificación.</p>
+      <p>Puntos promedio que obtuviste en cada criterio y cuántas veces te dieron cada nivel (0 a 4).</p>
     </div>
   </div>
   <div style="margin-top:12px"><%- include('partials/desglose', { desglose }) %></div>

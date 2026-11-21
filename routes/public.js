@@ -5,32 +5,35 @@ const { verificarClave, versionClave, cifrar, coincide } = require('../auth');
 
 const r = express.Router();
 
-// Además de tener sesión, el estudiante debe haber creado su contraseña
+// Solo entra quien ya se registró (tiene contraseña)
 function requiereUsuario(req, res, next) {
-  if (!req.usuario) return res.redirect('/');
-  if (!req.usuario.clave) return res.redirect('/crear-clave');
+  if (!req.usuario || !req.usuario.clave) {
+    req.session.participanteId = null;
+    return res.redirect('/');
+  }
   next();
 }
 
 // Sin espacios, sin tildes y en mayúsculas: el ingreso no distingue mayúsculas ni tildes
 const limpiarMatricula = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '').toUpperCase().slice(0, 30);
+const limpiarNombre = (s) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+// Compara nombres sin importar mayúsculas, tildes ni espacios extra
+const normalizar = (s) => limpiarNombre(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-// Con `fija` (llegó por el enlace de una sesión) solo se ofrece esa sesión
+// modo: 'estudiante' (entrar), 'registro' (primera vez) o 'admin'. `fija`: llegó con el enlace de una sesión.
 function pantallaIngreso(res, extra = {}, status = 200) {
-  const fija = extra.fija || null;
-  const sesiones = fija ? [fija] : q.sesionesAbiertas();
   res.status(status).render('inicio', {
-    modo: 'estudiante', error: null, errorAdmin: null, matricula: '',
-    sesionId: fija ? fija.id : '',
-    fija, sesiones,
+    modo: 'estudiante', error: null, errorRegistro: null, errorAdmin: null,
+    matricula: '', nombre: '', fija: null,
     ...extra,
   });
 }
 
 r.get('/', (req, res) => {
-  if (req.usuario) return res.redirect('/participantes');
+  if (req.usuario && req.usuario.clave) return res.redirect('/participantes');
   if (req.session.admin) return res.redirect('/admin');
-  pantallaIngreso(res, { modo: req.query.modo === 'admin' ? 'admin' : 'estudiante' });
+  const modo = ['admin', 'registro'].includes(req.query.modo) ? req.query.modo : 'estudiante';
+  pantallaIngreso(res, { modo });
 });
 
 // Enlace para compartir una sesión: /s/CODIGO
@@ -39,68 +42,104 @@ r.get('/s/:codigo', (req, res) => {
   if (!fija) {
     return res.status(404).render('mensaje', { titulo: 'Enlace no válido', texto: 'Este enlace de sesión no existe o fue reemplazado. Pide el enlace actual a tu profesor.' });
   }
-  if (req.usuario) return res.redirect('/participantes');
-  pantallaIngreso(res, { fija });
+  if (req.usuario && req.usuario.clave) return res.redirect('/participantes');
+  pantallaIngreso(res, { fija, modo: req.query.modo === 'registro' ? 'registro' : 'estudiante' });
 });
 
-// Intentos fallidos por cuenta (sesión + matrícula), no por IP: un aula entera comparte IP
-const limiteIngreso = rateLimit({
+// Intentos fallidos por matrícula, no por IP: un aula entera comparte IP
+const limitePorMatricula = (modo, texto) => rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
-  keyGenerator: (req) => `${req.body.codigo || req.body.sesion || ''}|${limpiarMatricula(req.body.matricula)}`,
+  keyGenerator: (req) => `${modo}|${limpiarMatricula(req.body.matricula)}`,
   handler: (req, res) => pantallaIngreso(res, {
-    error: 'Demasiados intentos fallidos con esta matrícula. Espera 15 minutos o pide a tu profesor que restablezca tu contraseña.',
-    matricula: limpiarMatricula(req.body.matricula), sesionId: Number(req.body.sesion) || '',
+    modo, [modo === 'registro' ? 'errorRegistro' : 'error']: texto,
+    matricula: limpiarMatricula(req.body.matricula), nombre: limpiarNombre(req.body.nombre),
     fija: req.body.codigo ? q.sesionPorCodigo(req.body.codigo) : null,
   }, 429),
 });
 
-// Usuario: la matrícula que cargó el profesor en esa sesión. Contraseña: la propia, o la matrícula si aún no la creó.
-r.post('/entrar', limiteIngreso, (req, res) => {
-  const matricula = limpiarMatricula(req.body.matricula);
-  const clave = String(req.body.clave || '');
-  const fija = req.body.codigo ? q.sesionPorCodigo(req.body.codigo) : null;
-  const sesionId = fija ? fija.id : Number(req.body.sesion) || null;
-  const fallo = (error, status = 400) => pantallaIngreso(res, { error, matricula, fija, sesionId: sesionId || '' }, status);
-
-  const sesion = sesionId ? q.sesion(sesionId) : null;
-  if (!sesion) return fallo('Elige tu sesión en la lista.');
-  if (!matricula) return fallo('Escribe tu matrícula.');
-  if (!clave) return fallo('Escribe tu contraseña. Si es tu primera vez, es tu matrícula.');
-
-  const p = q.participanteEnSesion(sesion.id, matricula);
-  const valida = p && (p.clave ? coincide(clave, p.clave) : limpiarMatricula(clave) === p.matricula.toUpperCase());
-  if (!valida) {
-    return fallo(`La matrícula o la contraseña no son correctas para "${sesion.nombre}". Si es tu primera vez, tu contraseña es tu matrícula. Si olvidaste la tuya, pide a tu profesor que la restablezca.`, 401);
-  }
+// De las inscripciones de un estudiante, la sesión con la que entra: la del enlace si vino por él; si no, la abierta más reciente
+function elegirInscripcion(inscripciones, fija) {
+  return (fija && inscripciones.find((p) => p.sesion_id === fija.id)) || inscripciones[0];
+}
+function iniciarSesion(req, res, p, saludo) {
   q.marcarIngreso(p.id);
   req.session.participanteId = p.id;
   req.session.admin = false;
-  if (!p.clave) return res.redirect('/crear-clave');
-  req.session.flash = `Hola, ${p.nombre}. ${sesion.abierta ? 'Evalúa a tus compañeros de sesión.' : 'La sesión está cerrada: puedes consultar tus resultados.'}`;
+  req.session.flash = `${saludo} ${p.abierta ? 'Evalúa a quien expone en cada ronda.' : 'La sesión está cerrada: puedes consultar tus resultados.'}`;
   res.redirect('/participantes');
+}
+
+// Entrar: solo con matrícula y la contraseña que el estudiante creó al registrarse
+r.post('/entrar', limitePorMatricula('estudiante', 'Demasiados intentos fallidos con esta matrícula. Espera 15 minutos y vuelve a intentarlo.'), (req, res) => {
+  const matricula = limpiarMatricula(req.body.matricula);
+  const clave = String(req.body.clave || '');
+  const fija = req.body.codigo ? q.sesionPorCodigo(req.body.codigo) : null;
+  const fallo = (error, status = 400) => pantallaIngreso(res, { error, matricula, fija }, status);
+  if (!matricula) return fallo('Escribe tu matrícula.');
+  if (!clave) return fallo('Escribe tu contraseña.');
+
+  const todas = q.inscripcionesDe(matricula);
+  const registradas = todas.filter((p) => p.clave);
+  if (todas.length && !registradas.length) {
+    return fallo('Esta matrícula aún no se ha registrado. Pulsa "Registrarme" para crear tu contraseña.', 401);
+  }
+  const validas = registradas.filter((p) => coincide(clave, p.clave));
+  if (!validas.length) {
+    return fallo('La matrícula o la contraseña no son correctas. Si olvidaste tu contraseña, pide a tu profesor que la restablezca.', 401);
+  }
+  const p = elegirInscripcion(validas, fija);
+  iniciarSesion(req, res, p, `Hola, ${p.nombre}.`);
 });
 
-// Primera vez (o tras un restablecimiento): el estudiante crea su contraseña antes de seguir
+// Registro (primera vez): matrícula y nombre deben coincidir con la lista del profesor; la contraseña se escribe dos veces
+r.post('/registro', limitePorMatricula('registro', 'Demasiados intentos con esta matrícula. Espera 15 minutos y vuelve a intentarlo.'), (req, res) => {
+  const matricula = limpiarMatricula(req.body.matricula);
+  const nombre = limpiarNombre(req.body.nombre);
+  const { clave, repetir } = req.body;
+  const fija = req.body.codigo ? q.sesionPorCodigo(req.body.codigo) : null;
+  const fallo = (errorRegistro, status = 400) => pantallaIngreso(res, { modo: 'registro', errorRegistro, matricula, nombre, fija }, status);
+  if (!matricula) return fallo('Escribe tu matrícula.');
+  if (!nombre) return fallo('Escribe tu nombre completo.');
+
+  const todas = q.inscripcionesDe(matricula);
+  if (!todas.length) return fallo('Esta matrícula no está en ninguna lista. Pide a tu profesor que te agregue y vuelve a intentarlo.');
+  const coinciden = todas.filter((p) => normalizar(p.nombre) === normalizar(nombre));
+  if (!coinciden.length) return fallo('El nombre no coincide con el de la lista de tu profesor. Escríbelo completo, tal como te registró.');
+  const pendientes = coinciden.filter((p) => !p.clave);
+  if (!pendientes.length) return fallo('Esta matrícula ya está registrada. Entra con tu matrícula y tu contraseña.');
+
+  if (String(clave || '').length < 6) return fallo('La contraseña debe tener al menos 6 caracteres.');
+  if (limpiarMatricula(clave) === matricula) return fallo('La contraseña no puede ser tu matrícula.');
+  if (clave !== repetir) return fallo('Las dos contraseñas no coinciden. Escríbela igual en ambos campos.');
+
+  // La misma contraseña sirve para todas las sesiones en que aparece con esa matrícula y ese nombre
+  const hash = cifrar(clave);
+  pendientes.forEach((p) => q.guardarClaveParticipante(p.id, hash));
+  const p = elegirInscripcion(pendientes.map((x) => ({ ...x, clave: hash })), fija);
+  iniciarSesion(req, res, p, `Listo, ${p.nombre}: ya estás registrado. Desde ahora entras con tu matrícula y tu contraseña.`);
+});
+
+// Cambiar la contraseña (ya registrado): pide la actual
 r.get('/crear-clave', (req, res) => {
-  if (!req.usuario) return res.redirect('/');
-  res.render('crear-clave', { error: null, primera: !req.usuario.clave });
+  if (!req.usuario || !req.usuario.clave) return res.redirect('/');
+  res.render('crear-clave', { error: null });
 });
 
 r.post('/crear-clave', (req, res) => {
   const u = req.usuario;
-  if (!u) return res.redirect('/');
+  if (!u || !u.clave) return res.redirect('/');
   const { actual, nueva, repetir } = req.body;
-  const fallo = (error) => res.status(400).render('crear-clave', { error, primera: !u.clave });
-  if (u.clave && !coincide(actual, u.clave)) return fallo('La contraseña actual no es correcta.');
+  const fallo = (error) => res.status(400).render('crear-clave', { error });
+  if (!coincide(actual, u.clave)) return fallo('La contraseña actual no es correcta.');
   if (String(nueva || '').length < 6) return fallo('La contraseña debe tener al menos 6 caracteres.');
   if (limpiarMatricula(nueva) === u.matricula.toUpperCase()) return fallo('La contraseña no puede ser tu matrícula.');
   if (nueva !== repetir) return fallo('Las dos contraseñas no coinciden.');
-  q.guardarClaveParticipante(u.id, cifrar(nueva));
-  req.session.flash = u.clave ? 'Contraseña actualizada.' : `Listo, ${u.nombre}. Desde ahora entras con tu matrícula y esta contraseña.`;
+  q.cambiarClaveMatricula(u.matricula, u.clave, cifrar(nueva));
+  req.session.flash = 'Contraseña actualizada.';
   res.redirect('/participantes');
 });
 
@@ -128,7 +167,7 @@ r.post('/salir', (req, res) => {
   res.redirect('/');
 });
 
-// La evaluación es siempre por turnos: el profesor abre la ronda de quien expone y solo a él se le califica.
+// La evaluación es siempre por turnos: el profesor abre la ronda de quien expone y solo se califica ese trabajo.
 // Firma del estado que ve el estudiante: si cambia (se abre o cierra una ronda, o la sesión), su pantalla se recarga
 const firma = (u) => `${u.abierta ? 1 : 0}|${u.expositor_id || ''}`;
 
@@ -170,14 +209,11 @@ r.get('/evaluar/:id', requiereUsuario, (req, res) => {
   // Sin ronda abierta y sin evaluación previa no hay nada que mostrar
   if (!enRonda && !ev) {
     req.session.flashError = evaluado.expuso_en
-      ? `La ronda de ${evaluado.nombre} ya se cerró y no lo evaluaste.`
-      : `${evaluado.nombre} aún no expone. Podrás evaluarlo cuando tu profesor abra su ronda.`;
+      ? `La ronda de ${evaluado.nombre} ya se cerró y no enviaste tu evaluación.`
+      : `${evaluado.nombre} aún no expone. Podrás evaluar su trabajo cuando tu profesor abra su ronda.`;
     return res.redirect('/participantes');
   }
-  const lista = q.listaParaEvaluador(req.usuario);
   res.render('evaluar', {
-    hechas: lista.filter((p) => p.mi_puntaje != null).length,
-    totalCompaneros: lista.length,
     evaluado,
     criterios: q.criteriosActivos(req.usuario.rubrica_id),
     selecciones: ev ? q.seleccionesDe(ev.id) : {},

@@ -1,31 +1,27 @@
-<%- include('partials/header', { titulo: primera ? 'Crea tu contraseña' : 'Cambiar contraseña' }) %>
+<%- include('partials/header', { titulo: 'Cambiar contraseña' }) %>
 <section class="panel entrar" style="max-width:480px; margin-inline:auto; width:100%">
   <form method="post" action="/crear-clave" class="ingreso-form">
     <div>
-      <h2><%= primera ? 'Crea tu contraseña' : 'Cambiar contraseña' %></h2>
-      <p class="sub"><%= primera
-        ? 'Es tu primer ingreso. Elige una contraseña para que nadie más pueda entrar con tu matrícula.'
-        : 'Escribe tu contraseña actual y la nueva.' %></p>
+      <h2>Cambiar contraseña</h2>
+      <p class="sub">Escribe tu contraseña actual y la nueva dos veces.</p>
     </div>
     <input type="text" name="usuario" value="<%= usuario.matricula %>" autocomplete="username" hidden readonly>
-    <% if (!primera) { %>
-      <div class="campo">
-        <label for="actual">Contraseña actual</label>
-        <input id="actual" name="actual" type="password" required autocomplete="current-password">
-      </div>
-    <% } %>
+    <div class="campo">
+      <label for="actual">Contraseña actual</label>
+      <input id="actual" name="actual" type="password" required autocomplete="current-password">
+    </div>
     <div class="campo">
       <label for="nueva">Nueva contraseña</label>
       <input id="nueva" name="nueva" type="password" minlength="6" maxlength="100" required autocomplete="new-password">
       <span class="ayuda">Al menos 6 caracteres y distinta de tu matrícula.</span>
     </div>
     <div class="campo">
-      <label for="repetir">Repite la contraseña</label>
+      <label for="repetir">Repite la nueva contraseña</label>
       <input id="repetir" name="repetir" type="password" minlength="6" maxlength="100" required autocomplete="new-password">
     </div>
+    <p class="aviso-clave" role="note"><%- icono('alerta', 16) %><span>Guárdala bien: no hay forma de recuperarla por tu cuenta. Si la olvidas, solo tu profesor puede restablecerla.</span></p>
     <% if (error) { %><p class="error" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></p><% } %>
     <button class="btn grande">Guardar contraseña</button>
-    <p class="small muted">Si la olvidas, tu profesor puede restablecerla y volverás a entrar con tu matrícula.</p>
   </form>
 </section>
 <%- include('partials/footer') %>

@@ -11,19 +11,19 @@
     </div>
     <div class="acciones">
       <%- include('../partials/estado', { e: estado }) %>
-      <span class="muted small"><%= recibidas.length %> recibidas · <%= hechas.length %> hechas · registrado <%= p.creado_en %> UTC</span>
+      <span class="muted small"><%= plural(recibidas.length, 'evaluación recibida', 'evaluaciones recibidas') %>, <%= plural(hechas.length, 'hecha', 'hechas') %></span>
     </div>
     <%- include('../partials/regla', { valor: resumen.promedio ?? 0, est: estado, escala: true, umbral: p.umbral }) %>
   </div>
 </section>
 
 <section class="panel">
-  <div class="panel-head"><div><h2>Desglose por criterio</h2><p>Puntos promedio en cada criterio y cuántas veces recibió cada calificación.</p></div></div>
+  <div class="panel-head"><div><h2>Desglose por criterio</h2><p>Puntos promedio en cada criterio y cuántas veces recibió cada nivel (0 a 4).</p></div></div>
   <div style="margin-top:12px"><%- include('../partials/desglose', { desglose }) %></div>
 </section>
 
 <section class="panel">
-  <div class="panel-head"><div><h2>Evaluaciones recibidas</h2><p>Lo que sus compañeros marcaron al evaluarlo.</p></div></div>
+  <div class="panel-head"><div><h2>Evaluaciones recibidas</h2><p>El nivel que le dio cada compañero en cada criterio.</p></div></div>
   <div style="margin-top:12px"><%- include('_tabla-evals', { lista: recibidas, volver: '/admin/participante/' + p.id, ocultar: 'evaluado' }) %></div>
 </section>
 
@@ -34,10 +34,10 @@
 
 <form method="post" action="/admin/participante/<%= p.id %>/clave" class="acciones">
   <% if (p.clave) { %>
-    <button class="btn sec" data-confirmar="¿Restablecer la contraseña de <%= p.nombre %>?" data-detalle="Su contraseña volverá a ser su matrícula (<%= p.matricula %>) y deberá crear una nueva al entrar. Sus evaluaciones no cambian." data-accion="Restablecer">Restablecer contraseña</button>
+    <button class="btn sec" data-confirmar="¿Restablecer la contraseña de <%= p.nombre %>?" data-detalle="Se borrará su contraseña y tendrá que registrarse de nuevo con su matrícula, su nombre y una contraseña nueva. Sus evaluaciones no cambian." data-accion="Restablecer">Restablecer contraseña</button>
     <span class="muted small">Para cuando el estudiante olvida su contraseña.</span>
   <% } else { %>
-    <span class="muted small">Aún no crea su contraseña: entra con su matrícula (<%= p.matricula %>) como contraseña.</span>
+    <span class="muted small">Aún no se registra: la primera vez debe crear su cuenta con su matrícula (<%= p.matricula %>), su nombre y una contraseña.</span>
   <% } %>
 </form>
 <form method="post" action="/admin/participante/<%= p.id %>/borrar" class="acciones">

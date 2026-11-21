@@ -4,13 +4,13 @@
 <% const alcance = filtro.sesion ? 'de la sesión ' + filtro.sesion.nombre : 'de todas las sesiones'; %>
 
 <div class="page-head">
-  <p class="ink-2">Registro de todas las evaluaciones: quién evaluó a quién, con qué puntaje y qué criterios marcó.</p>
+  <p class="ink-2">Registro de todas las evaluaciones: quién evaluó a quién, con qué puntaje y qué nivel dio en cada criterio.</p>
   <label class="buscar"><span class="sr-only">Buscar</span><%- icono('buscar', 16) %><input type="search" id="buscar" placeholder="Buscar por nombre o matrícula" data-filtro="#evals tbody tr"></label>
 </div>
 
 <div class="panel" id="evals">
   <%- include('_tabla-evals', { lista: evaluaciones, volver: '/admin/evaluaciones' + filtro.qs, ocultar: null }) %>
-  <div class="tabla-pie"><span>Las evaluaciones editadas muestran la fecha de su último cambio.</span><span><%= evaluaciones.length %> evaluaciones</span></div>
+  <div class="tabla-pie"><span>Las evaluaciones editadas muestran la fecha de su último cambio.</span><span><%= plural(evaluaciones.length, 'evaluación', 'evaluaciones') %></span></div>
 </div>
 
 <section class="panel panel-pad zona-peligro" style="display:grid; gap:10px">

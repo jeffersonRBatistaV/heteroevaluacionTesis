@@ -5,6 +5,6 @@
     <% if (typeof bajada !== 'undefined' && bajada) { %><p class="lead"><%= bajada %></p><% } %>
   </div>
   <div class="acciones">
-    <a class="btn sec" href="/admin/exportar.xlsx<%= filtro ? filtro.qs : '' %>"><%- icono('descargar', 16) %>Exportar a Excel</a>
+    <% if (typeof exportar === 'undefined' || exportar) { %><a class="btn sec" href="/admin/exportar.xlsx<%= filtro ? filtro.qs : '' %>"><%- icono('descargar', 16) %>Exportar a Excel</a><% } %>
   </div>
 </div>

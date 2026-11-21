@@ -5,13 +5,13 @@
   <div class="evaluando">
     <span class="avatar" aria-hidden="true"><%= iniciales(evaluado.nombre) %></span>
     <div>
-      <p class="eyebrow"><%= existente ? 'Corrigiendo tu evaluación' : 'Llevas ' + hechas + ' de ' + totalCompaneros + ' defensas evaluadas' %></p>
+      <p class="eyebrow"><%= bloqueada ? 'Tu evaluación, solo lectura' : existente ? 'Corrigiendo tu evaluación' : 'Expone ahora' %></p>
       <h1><%= evaluado.nombre %></h1>
     </div>
   </div>
 </div>
 <div style="display:grid; gap:6px; margin-top:-6px">
-  <p class="ink-2">Elige en cada criterio el nivel que mejor describe el trabajo de <strong><%= evaluado.nombre %></strong>, de <%= escala[0] %> (0) a <%= escala[4] %> (4). Hay que calificar todos.</p>
+  <% if (bloqueada) { %><p class="ink-2">Así calificaste el trabajo de <strong><%= evaluado.nombre %></strong>. El nivel marcado en cada criterio es el que elegiste.</p><% } else { %><p class="ink-2">Elige en cada criterio el nivel que mejor describe el trabajo de <strong><%= evaluado.nombre %></strong>, de <%= escala[0] %> (0) a <%= escala[4] %> (4). Hay que calificar todos.</p><% } %>
   <% if (!bloqueada) { %><p class="atajos">Con teclado: pulsa <kbd>0</kbd> a <kbd>4</kbd> para calificar y pasar al siguiente criterio.</p><% } %>
 </div>
 
@@ -64,7 +64,7 @@
       <div class="regla" id="regla-eval" style="--v: 0; --umbral: <%= usuario.umbral %>"><span class="fill"></span><span class="umbral"></span></div>
       <div class="regla-escala" aria-hidden="true"><span>0</span><span class="u" style="left: <%= usuario.umbral %>%"><%= usuario.umbral %></span><span>100</span></div>
     </div>
-    <button class="btn grande" id="btn-enviar" <%= bloqueada || !criterios.length ? 'disabled' : '' %>><%= existente ? 'Guardar cambios' : 'Enviar evaluación' %></button>
+    <% if (!bloqueada) { %><button class="btn grande" id="btn-enviar" <%= !criterios.length ? 'disabled' : '' %>><%= existente ? 'Guardar cambios' : 'Enviar evaluación' %></button><% } %>
   </div>
 </form>
 <script>window.UMBRAL = <%= usuario.umbral %>;</script>

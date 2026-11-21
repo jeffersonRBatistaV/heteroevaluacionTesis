@@ -122,18 +122,20 @@
     if (!fila.hidden) fila.querySelector('input[name=nombre]').focus();
   });
 
-  // Conmutador Estudiante / Administrador en la pantalla de ingreso
+  // Pantalla de ingreso: Estudiante (Entrar / Registrarme) o Administrador
   const ingreso = document.getElementById('ingreso');
   if (ingreso) {
+    const FOCO = { estudiante: '#matricula', registro: '#r-matricula', admin: '#clave' };
     ingreso.querySelectorAll('[data-modo]').forEach((b) =>
       b.addEventListener('click', () => {
         const modo = b.dataset.modo;
-        ingreso.querySelectorAll('[data-modo]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        // El botón "Estudiante" queda marcado tanto para entrar como para registrarse
+        const grupo = modo === 'admin' ? 'admin' : 'estudiante';
+        ingreso.querySelectorAll('.conmutador [data-modo]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.modo === grupo)));
         ingreso.querySelectorAll('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== modo));
         // La columna de la izquierda también cambia: descripción para el estudiante o para el profesor
-        document.querySelectorAll('[data-lado]').forEach((l) => (l.hidden = l.dataset.lado !== modo));
-        const foco = ingreso.querySelector(`[data-panel="${modo}"] ${modo === 'admin' ? '#clave' : '#sesion'}`);
-        foco && foco.focus();
+        document.querySelectorAll('[data-lado]').forEach((l) => (l.hidden = !l.dataset.lado.split(' ').includes(modo)));
+        ingreso.querySelector(FOCO[modo])?.focus();
       })
     );
   }
@@ -176,12 +178,12 @@
       s = Math.round(s * 100) / 100;
       total.textContent = s;
       regla.style.setProperty('--v', Math.min(100, s));
-      const ok = s > umbral;
+      const ok = s >= umbral;
       regla.classList.toggle('aprobado', ok && !faltan);
       regla.classList.toggle('reprobado', !ok && !faltan);
       ver.innerHTML = faltan
         ? `<span class="muted">Falta${faltan === 1 ? '' : 'n'} ${faltan} criterio${faltan === 1 ? '' : 's'} por calificar</span>`
-        : `<span class="estado ${ok ? 'aprobado' : 'reprobado'}">${ok ? 'Sobre' : 'Bajo'} el umbral de ${umbral}</span>`;
+        : `<span class="estado ${ok ? 'aprobado' : 'reprobado'}">${ok ? 'Alcanza' : 'No alcanza'} el mínimo de ${umbral}</span>`;
     };
     // Si intenta enviar con criterios sin calificar, lleva al primero que falta
     fe.addEventListener('submit', (ev) => {

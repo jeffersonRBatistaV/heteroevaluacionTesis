@@ -64,7 +64,7 @@ async function generarExcel({ nota, min }, estadoDe, f) {
     ['Aprobados', resultados.filter((x) => x.estado === 'Aprobado').length],
     ['Reprobados', resultados.filter((x) => x.estado === 'Reprobado').length],
     ['Pendientes (sin evaluaciones suficientes)', resultados.filter((x) => x.estado === 'Pendiente').length],
-    ['Umbral de aprobación (más de)', f.sesion ? f.sesion.umbral : 'Según cada sesión'],
+    ['Mínimo para aprobar (puntos)', f.sesion ? f.sesion.umbral : 'Según cada sesión'],
     ['Evaluaciones mínimas para tener estado', min],
   ].forEach(([k, v]) => {
     const row = wsR.addRow([k, v]);
@@ -107,7 +107,7 @@ async function generarExcel({ nota, min }, estadoDe, f) {
     { header: 'Evaluaciones recibidas', key: 'rec', width: 13 },
     { header: 'Evaluaciones hechas', key: 'hec', width: 13 },
     { header: 'Promedio', key: 'prom', width: 11 },
-    { header: 'Umbral', key: 'umb', width: 9 },
+    { header: 'Mínimo', key: 'umb', width: 9 },
     { header: 'Estado', key: 'est', width: 13 },
     { header: 'Registrado (UTC)', key: 'reg', width: 19 },
   ];
@@ -140,7 +140,7 @@ async function generarExcel({ nota, min }, estadoDe, f) {
     // selecciones: "criterio:opcion:puntos,…"
     const sel = Object.fromEntries(String(e.selecciones || '').split(',').filter(Boolean).map((t) => { const [c, o, pt] = t.split(':'); return [Number(c), { o: Number(o), pt: Number(pt) }]; }));
     const d = { id: e.id, fecha: e.actualizado_en, ses: e.sesion_nombre, em: e.evaluador_mat, en: e.evaluador, dm: e.evaluado_mat, dn: e.evaluado, pt: e.puntaje_total, crit: e.criterios || '', obs: e.comentario || '' };
-    criterios.forEach((c) => (d[`c${c.id}`] = sel[c.id] ? `${ESCALA[sel[c.id].o - 1]} (${sel[c.id].pt})` : '—'));
+    criterios.forEach((c) => (d[`c${c.id}`] = sel[c.id] ? `${ESCALA[sel[c.id].o - 1]} (${sel[c.id].o - 1}), ${sel[c.id].pt} pts` : '—'));
     const row = ws2.addRow(d);
     row.getCell('pt').font = { bold: true };
     criterios.forEach((c) => {

@@ -6,7 +6,7 @@
   const prep = [
     { ok: lista.length > 0, titulo: 'Lista de participantes', txt: lista.length ? lista.length + ' estudiantes cargados' : 'Aún no hay nadie en la lista', ir: '#lista', accion: 'Cargar lista' },
     { ok: rubricaOk, titulo: 'Rúbrica', txt: rubricaOk ? criterios.length + ' criterios, suman 100' : 'Los criterios no suman 100', ir: '#rubrica', accion: 'Revisar rúbrica' },
-    { ok: true, titulo: 'Umbral de aprobación', txt: 'Aprueba con más de ' + s.umbral + ' puntos', ir: '#rubrica', accion: 'Cambiar' },
+    { ok: true, titulo: 'Mínimo para aprobar', txt: 'Aprueba con ' + s.umbral + ' puntos o más', ir: '#rubrica', accion: 'Cambiar' },
     { ok: !!s.abierta, titulo: 'Sesión abierta', txt: s.abierta ? 'Abre la ronda de quien expone' : 'Cerrada: solo consulta', ir: '#compartir', accion: s.abierta ? 'Copiar enlace' : 'Abrir en Ajustes' },
   ];
 %>
@@ -48,7 +48,7 @@
     <div class="ronda-info">
       <p class="eyebrow"><span class="punto-vivo" aria-hidden="true"></span>Ronda abierta</p>
       <h2>Expone <%= ex.nombre %></h2>
-      <p class="small ink-2"><strong data-ronda-recibidas><%= ronda.recibidas %></strong> de <%= ronda.esperadas %> compañeros ya lo evaluaron. El conteo se actualiza solo.</p>
+      <p class="small ink-2"><strong data-ronda-recibidas><%= ronda.recibidas %></strong> de <%= ronda.esperadas %> compañeros ya enviaron su evaluación. El conteo se actualiza solo.</p>
     </div>
     <form method="post" action="/admin/sesion/<%= s.id %>/ronda/cerrar"><button class="btn">Cerrar ronda</button></form>
   <% } else if (!lista.length) { %>
@@ -56,7 +56,7 @@
   <% } else { %>
     <div class="ronda-info">
       <h2>Ninguna ronda abierta</h2>
-      <p class="small muted"><%= ronda.expusieron %> de <%= ronda.participantes %> ya expusieron. Elige a quien expone ahora: mientras su ronda esté abierta, sus compañeros solo podrán evaluarlo a él.</p>
+      <p class="small muted"><%= ronda.expusieron %> de <%= ronda.participantes %> ya expusieron. Elige a quien expone ahora: mientras su ronda esté abierta, sus compañeros solo podrán evaluar ese trabajo.</p>
     </div>
     <form method="post" action="/admin/sesion/<%= s.id %>/ronda" class="ronda-abrir">
       <label for="r-expositor" class="sr-only">Quién expone</label>
@@ -71,15 +71,15 @@
 <% } %>
 
 <section class="kpis kpis-3" aria-label="Resumen de la sesión">
-  <a class="panel kpi kpi-link" href="#lista" data-ir-pestana><span class="label">Participantes</span><span class="valor"><%= s.n_participantes %></span><span class="nota"><%= entraron %> ya entraron</span></a>
+  <a class="panel kpi kpi-link" href="#lista" data-ir-pestana><span class="label">Participantes</span><span class="valor"><%= s.n_participantes %></span><span class="nota"><%= entraron %> ya se registraron</span></a>
   <a class="panel kpi kpi-link" href="/admin/evaluaciones?sesion=<%= s.id %>"><span class="label">Evaluaciones</span><span class="valor"><%= s.n_evaluaciones %></span><span class="nota">Ver el registro</span></a>
-  <a class="panel kpi kpi-link" href="#rubrica" data-ir-pestana><span class="label">Aprueba con más de</span><span class="valor"><%= s.umbral %><small> puntos</small></span><span class="nota"><%= s.rubrica_general ? 'Rúbrica general' : 'Rúbrica propia' %></span></a>
+  <a class="panel kpi kpi-link" href="#rubrica" data-ir-pestana><span class="label">Mínimo para aprobar</span><span class="valor"><%= s.umbral %><small> de 100</small></span><span class="nota"><%= s.rubrica_general ? 'Rúbrica general' : 'Rúbrica propia' %></span></a>
 </section>
 
 <nav class="pestanas" aria-label="Secciones de la sesión" id="pestanas-sesion">
   <a href="#lista" data-pestana="lista">Participantes <span class="cuenta"><%= lista.length %></span></a>
   <a href="#compartir" data-pestana="compartir">Compartir enlace</a>
-  <a href="#rubrica" data-pestana="rubrica">Rúbrica y umbral</a>
+  <a href="#rubrica" data-pestana="rubrica">Rúbrica y mínimo</a>
   <a href="#datos" data-pestana="datos">Ajustes</a>
 </nav>
 
@@ -88,7 +88,7 @@
   <div class="panel-head">
     <div>
       <h2>Lista de participantes</h2>
-      <p>Solo pueden entrar los estudiantes de esta lista. Su usuario es la matrícula; la primera vez la contraseña también es la matrícula y luego crean una propia.</p>
+      <p>Solo pueden registrarse los estudiantes de esta lista. La primera vez cada uno crea su cuenta con su matrícula, su nombre tal como aparece aquí y una contraseña; después entra con matrícula y contraseña.</p>
     </div>
     <a class="small" href="/admin/plantilla.xlsx"><%- icono('descargar', 14) %> Plantilla de Excel</a>
   </div>
@@ -134,19 +134,19 @@
   <% } %>
   <div class="tabla-wrap">
     <table class="tabla" id="tabla-lista">
-      <thead><tr><th>Participante</th><th>Entró</th><th class="der solo-ancho">Recibidas</th><th class="der solo-ancho">Hechas</th><th class="der">Promedio</th><th></th></tr></thead>
+      <thead><tr><th>Participante</th><th class="solo-ancho">Registrado</th><th class="der solo-ancho">Recibidas</th><th class="der solo-ancho">Hechas</th><th class="der">Promedio</th><th></th></tr></thead>
       <tbody>
         <% if (!lista.length) { %><tr><td colspan="6"><div class="vacio"><strong>La lista está vacía</strong><span>Importa un Excel o agrega a los estudiantes a mano. Mientras la lista esté vacía nadie podrá entrar a esta sesión.</span></div></td></tr><% } %>
         <% lista.forEach(f => { %>
           <tr data-texto="<%= (f.nombre + ' ' + f.matricula).toLowerCase() %>">
             <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %><%= ronda.expositor && ronda.expositor.id === f.id ? ' · exponiendo ahora' : f.expuso_en ? ' · ya expuso' : ' · por exponer' %></span></a></td>
-            <td><% if (f.clave_propia) { %><span class="chip-info abierta" title="Ya creó su contraseña"><%- icono('check', 12) %>Sí</span><% } else if (f.ultimo_ingreso) { %><span class="chip-info cerrada" title="Entró pero aún no crea su contraseña">Sin contraseña</span><% } else { %><span class="chip-info cerrada">Aún no</span><% } %></td>
+            <td class="solo-ancho"><% if (f.clave_propia) { %><span class="chip-info abierta" title="Ya creó su cuenta"><%- icono('check', 12) %>Sí</span><% } else { %><span class="chip-info cerrada">Aún no</span><% } %></td>
             <td class="der solo-ancho"><%= f.n_eval %></td>
             <td class="der solo-ancho"><%= f.hechas %></td>
             <td class="der puntaje"><%= f.promedio ?? '—' %></td>
-            <td class="der" style="white-space:nowrap">
+            <td class="der acciones-fila">
               <button type="button" class="link" data-editar="<%= f.id %>">Editar</button>
-              <% if (f.clave_propia) { %><form method="post" action="/admin/participante/<%= f.id %>/clave"><input type="hidden" name="volver" value="/admin/sesion/<%= s.id %>#lista"><button class="link" data-confirmar="¿Restablecer la contraseña de <%= f.nombre %>?" data-detalle="Su contraseña volverá a ser su matrícula (<%= f.matricula %>) y deberá crear una nueva al entrar. Sus evaluaciones no cambian." data-accion="Restablecer">Restablecer contraseña</button></form><% } %>
+              <% if (f.clave_propia) { %><form method="post" action="/admin/participante/<%= f.id %>/clave"><input type="hidden" name="volver" value="/admin/sesion/<%= s.id %>#lista"><button class="link" data-confirmar="¿Restablecer la contraseña de <%= f.nombre %>?" data-detalle="Se borrará su contraseña y tendrá que registrarse de nuevo con su matrícula, su nombre y una contraseña nueva. Sus evaluaciones no cambian." data-accion="Restablecer">Restablecer contraseña</button></form><% } %>
               <form method="post" action="/admin/participante/<%= f.id %>/borrar"><input type="hidden" name="volver" value="/admin/sesion/<%= s.id %>#lista"><button class="link peligro" data-confirmar="¿Quitar a <%= f.nombre %> de la lista?" data-detalle="Ya no podrá entrar, y se borrarán sus <%= f.n_eval %> evaluaciones recibidas y <%= f.hechas %> hechas. No se puede deshacer." data-escribir="<%= f.matricula %>" data-accion="Quitar de la lista">Quitar</button></form>
             </td>
           </tr>
@@ -165,7 +165,7 @@
       </tbody>
     </table>
   </div>
-  <div class="tabla-pie"><span><%= entraron %> de <%= lista.length %> ya entraron</span><span><%= lista.length %> en la lista</span></div>
+  <div class="tabla-pie"><span><%= entraron %> de <%= lista.length %> ya se registraron</span><span><%= lista.length %> en la lista</span></div>
 </section>
 
 <!-- Compartir -->
@@ -187,7 +187,7 @@
 <!-- Rúbrica y umbral -->
 <section class="panel panel-pad panel-pestana" id="rubrica" data-panel-pestana="rubrica">
   <div class="acciones" style="justify-content:space-between">
-    <div><h2>Rúbrica y umbral de aprobación</h2><p class="muted small" style="margin-top:4px"><%= criterios.length %> criterios activos. Con Excelente en todos se obtienen <%= suma %> puntos.</p></div>
+    <div><h2>Rúbrica y mínimo para aprobar</h2><p class="muted small" style="margin-top:4px"><%= criterios.length %> criterios activos. Con Excelente en todos se obtienen <%= suma %> puntos.</p></div>
     <a class="btn sec" href="/admin/rubrica/<%= s.rubrica_id %>"><%= s.rubrica_general ? 'Editar la rúbrica general' : 'Editar la rúbrica de esta sesión' %></a>
   </div>
   <form method="post" action="/admin/sesion/<%= s.id %>/rubrica" style="display:grid; gap:16px" id="form-rubrica-sesion">
@@ -196,15 +196,15 @@
       <label><input type="radio" name="rubrica" value="propia" <%= s.rubrica_general ? '' : 'checked' %>><span><strong>Rúbrica propia</strong><small><%= s.rubrica_general ? 'Se crea como copia de la general y la editas solo para esta sesión.' : 'Esta sesión ya tiene su propia rúbrica.' %></small></span></label>
     </div>
     <div class="campo">
-      <label for="umbral">Umbral de aprobación</label>
+      <label for="umbral">Mínimo para aprobar</label>
       <div class="umbral-campo">
-        <span>Aprueba con más de</span>
+        <span>Aprueba con</span>
         <input id="umbral" name="umbral" type="number" min="1" max="100" step="0.5" value="<%= s.umbral %>" required>
-        <span>puntos de 100</span>
-        <span class="ayuda">Con <%= s.umbral %>, un promedio de <%= s.umbral %> exacto no aprueba; <%= Math.round((s.umbral + 0.01) * 100) / 100 %> sí.</span>
+        <span>puntos o más, de 100</span>
+        <span class="ayuda">Es el puntaje mínimo aprobatorio: con <%= s.umbral %>, un promedio de <%= s.umbral %> exacto aprueba.</span>
       </div>
     </div>
-    <div class="acciones"><button class="btn">Guardar rúbrica y umbral</button><span class="muted small">Cambiar la rúbrica no recalcula las evaluaciones ya guardadas; cambiar el umbral sí actualiza los estados.</span></div>
+    <div class="acciones"><button class="btn">Guardar rúbrica y mínimo</button><span class="muted small">Cambiar la rúbrica no recalcula las evaluaciones ya guardadas; cambiar el umbral sí actualiza los estados.</span></div>
   </form>
   <ul class="desglose" style="border:1px solid var(--linea); border-radius: var(--r)">
     <% criterios.forEach(c => { %>

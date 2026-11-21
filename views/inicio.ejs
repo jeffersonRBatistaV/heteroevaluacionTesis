@@ -1,60 +1,82 @@
-<%- include('partials/header', { titulo: 'Ingreso' }) %>
+<%- include('partials/header', { titulo: modo === 'registro' ? 'Registro' : 'Ingreso' }) %>
+<% const esEst = modo !== 'admin'; %>
 <section class="inicio">
-  <div data-lado="estudiante" <%= modo === 'admin' ? 'hidden' : '' %>>
+  <div data-lado="estudiante registro" <%= esEst ? '' : 'hidden' %>>
     <h1>Heteroevaluación de tesis</h1>
-    <p class="lead">Ingresa con tu matrícula y tu contraseña para evaluar a tus compañeros de sesión con la rúbrica del curso y consultar tu resultado.</p>
+    <p class="lead">Evalúa a tus compañeros de sesión con la rúbrica del curso y consulta tu resultado.</p>
     <ol class="pasos">
-      <li><div><strong>Entra con tu matrícula</strong><span>Elige tu sesión y escribe tu matrícula. La primera vez la contraseña también es tu matrícula; luego crearás una propia.</span></div></li>
-      <li><div><strong>Evalúa a tus compañeros</strong><span>En cada criterio elige una opción, de <%= escala[0] %> a <%= escala[4] %>.</span></div></li>
-      <li><div><strong>Consulta tu resultado</strong><span>Se habilita cuando hayas evaluado al menos al <%= config.porcentajeParaVer %> % de tus compañeros.</span></div></li>
+      <li><div><strong>Regístrate la primera vez</strong><span>Con tu matrícula y tu nombre, tal como te agregó tu profesor, y una contraseña que solo tú conoces.</span></div></li>
+      <li><div><strong>Entra con matrícula y contraseña</strong><span>Desde entonces solo necesitas esas dos cosas. Tu profesor abre la ronda de cada compañero y lo calificas de <%= escala[0] %> (0) a <%= escala[4] %> (4).</span></div></li>
+      <li><div><strong>Consulta tu resultado</strong><span>Se habilita cuando hayas evaluado al menos al <%= config.porcentajeParaVer %> % de los compañeros que ya expusieron.</span></div></li>
     </ol>
     <p class="small" style="margin-top:22px"><a href="/instructivo">Leer el instructivo completo</a></p>
   </div>
 
   <div data-lado="admin" <%= modo === 'admin' ? '' : 'hidden' %>>
     <h1>Panel del profesor</h1>
-    <p class="lead">Crea sesiones de evaluación, carga la lista de estudiantes, define la rúbrica y el umbral de aprobación, y revisa los resultados.</p>
+    <p class="lead">Crea sesiones de evaluación, carga la lista de estudiantes, define la rúbrica y el mínimo para aprobar, y revisa los resultados.</p>
     <ol class="pasos">
-      <li><div><strong>Crea una sesión</strong><span>Con nombre y fecha. Importa la lista desde Excel o agrega a los estudiantes a mano.</span></div></li>
-      <li><div><strong>Define la rúbrica y el umbral</strong><span>Elige los criterios, los puntos de cada opción y con cuántos puntos se aprueba.</span></div></li>
-      <li><div><strong>Comparte el enlace y revisa</strong><span>Sigue el avance en el dashboard y exporta los resultados a Excel.</span></div></li>
+      <li><div><strong>Crea una sesión</strong><span>Con nombre y fecha. Importa la lista desde Excel o agrega a los estudiantes a mano, con nombre y matrícula.</span></div></li>
+      <li><div><strong>Pide que se registren</strong><span>Cada estudiante crea su cuenta la primera vez con su matrícula, su nombre y una contraseña.</span></div></li>
+      <li><div><strong>Abre las rondas y revisa</strong><span>Abre la ronda de quien expone, sigue el avance y exporta los resultados a Excel.</span></div></li>
     </ol>
     <p class="small" style="margin-top:22px"><a href="/instructivo#profesores">Leer el instructivo completo</a></p>
   </div>
 
   <div class="panel entrar" id="ingreso">
     <div class="conmutador" role="group" aria-label="Tipo de acceso">
-      <button type="button" data-modo="estudiante" aria-pressed="<%= modo === 'estudiante' %>">Estudiante</button>
+      <button type="button" data-modo="estudiante" aria-pressed="<%= esEst %>">Estudiante</button>
       <button type="button" data-modo="admin" aria-pressed="<%= modo === 'admin' %>">Administrador</button>
     </div>
 
-    <form method="post" action="/entrar" class="ingreso-form" data-panel="estudiante" <%= modo === 'admin' ? 'hidden' : '' %> novalidate>
+    <!-- Entrar: matrícula y contraseña -->
+    <form method="post" action="/entrar" class="ingreso-form" data-panel="estudiante" <%= modo === 'estudiante' ? '' : 'hidden' %> novalidate>
       <% if (fija) { %><input type="hidden" name="codigo" value="<%= fija.codigo %>"><% } %>
       <div>
-        <h2>Entrar como estudiante</h2>
-        <p class="sub">Tu usuario es tu matrícula, tal como te registró tu profesor.</p>
+        <h2>Entrar</h2>
+        <p class="sub"><%= fija ? 'Sesión ' + fija.nombre + '. ' : '' %>Con tu matrícula y la contraseña que creaste al registrarte.</p>
       </div>
       <div class="campo">
-        <label for="sesion">Sesión</label>
-        <select id="sesion" name="sesion">
-          <% if (!fija) { %><option value="">Elige tu sesión</option><% } %>
-          <% const ab = sesiones.filter(s => s.abierta), ce = sesiones.filter(s => !s.abierta); %>
-          <% if (ab.length) { %><optgroup label="Sesiones abiertas"><% ab.forEach(s => { %><option value="<%= s.id %>" <%= Number(sesionId) === s.id ? 'selected' : '' %>><%= s.nombre %> · <%= fecha(s.fecha) %></option><% }) %></optgroup><% } %>
-          <% if (ce.length) { %><optgroup label="Cerradas (solo consulta)"><% ce.forEach(s => { %><option value="<%= s.id %>" <%= Number(sesionId) === s.id ? 'selected' : '' %>><%= s.nombre %> · <%= fecha(s.fecha) %></option><% }) %></optgroup><% } %>
-        </select>
-        <span class="ayuda"><%= fija && !fija.abierta ? 'Esta sesión está cerrada: puedes entrar para consultar tus resultados.' : fija ? 'Entraste con el enlace de esta sesión.' : sesiones.length ? 'Ordenadas de la más reciente a la más antigua.' : 'Todavía no hay sesiones.' %></span>
-      </div>
-      <div class="campo">
-        <label for="matricula">Usuario (matrícula)</label>
+        <label for="matricula">Matrícula</label>
         <input id="matricula" class="mono-in" name="matricula" value="<%= matricula %>" maxlength="30" required placeholder="2021-0456" autocapitalize="characters" autocomplete="username" spellcheck="false">
       </div>
       <div class="campo">
         <label for="clave-est">Contraseña</label>
         <input id="clave-est" name="clave" type="password" maxlength="100" required autocomplete="current-password">
-        <span class="ayuda">La primera vez, tu contraseña es tu matrícula. Después crearás una propia.</span>
       </div>
       <% if (error) { %><p class="error" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></p><% } %>
       <button class="btn grande">Entrar</button>
+      <p class="cambio-modo">¿Es tu primera vez? <button type="button" class="link" data-modo="registro">Registrarme</button></p>
+    </form>
+
+    <!-- Registro (primera vez): matrícula, nombre y contraseña dos veces -->
+    <form method="post" action="/registro" class="ingreso-form" data-panel="registro" <%= modo === 'registro' ? '' : 'hidden' %> novalidate>
+      <% if (fija) { %><input type="hidden" name="codigo" value="<%= fija.codigo %>"><% } %>
+      <div>
+        <h2>Registrarme</h2>
+        <p class="sub">Solo la primera vez. Escribe tu matrícula y tu nombre tal como te agregó tu profesor.</p>
+      </div>
+      <div class="campo">
+        <label for="r-matricula">Matrícula</label>
+        <input id="r-matricula" class="mono-in" name="matricula" value="<%= matricula %>" maxlength="30" required placeholder="2021-0456" autocapitalize="characters" autocomplete="username" spellcheck="false">
+      </div>
+      <div class="campo">
+        <label for="r-nombre">Nombre completo</label>
+        <input id="r-nombre" name="nombre" value="<%= nombre %>" maxlength="80" required placeholder="María Pérez Gómez" autocomplete="name">
+      </div>
+      <div class="campo">
+        <label for="r-clave">Contraseña</label>
+        <input id="r-clave" name="clave" type="password" minlength="6" maxlength="100" required autocomplete="new-password">
+        <span class="ayuda">Al menos 6 caracteres y distinta de tu matrícula.</span>
+      </div>
+      <div class="campo">
+        <label for="r-repetir">Repite la contraseña</label>
+        <input id="r-repetir" name="repetir" type="password" minlength="6" maxlength="100" required autocomplete="new-password">
+      </div>
+      <p class="aviso-clave" role="note"><%- icono('alerta', 16) %><span>Guárdala bien: no hay forma de recuperarla por tu cuenta. Si la olvidas, solo tu profesor puede restablecerla.</span></p>
+      <% if (errorRegistro) { %><p class="error" role="alert"><%- icono('alerta', 16) %><span><%= errorRegistro %></span></p><% } %>
+      <button class="btn grande">Registrarme</button>
+      <p class="cambio-modo">¿Ya te registraste? <button type="button" class="link" data-modo="estudiante">Entrar</button></p>
     </form>
 
     <form method="post" action="/entrar-admin" class="ingreso-form" data-panel="admin" <%= modo === 'admin' ? '' : 'hidden' %>>

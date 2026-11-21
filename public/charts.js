@@ -104,7 +104,9 @@
         const h = Math.max(2, (d.n / tope) * ih);
         el('path', { d: columna(cx - bw / 2, m.t + ih - h, bw, h), class: 'mark' }, marcas);
       }
-      if (i % cadaN === 0 || i === items.length - 1) texto(svg, cx, H - m.b + 18, d.etiqueta, { 'text-anchor': 'middle' });
+      // La última etiqueta siempre se ve; la anterior se omite si quedaría pegada a ella
+      const ult = items.length - 1;
+      if (i === ult || (i % cadaN === 0 && ult - i >= cadaN)) texto(svg, cx, H - m.b + 18, d.etiqueta, { 'text-anchor': 'middle' });
       if (i === iMax) texto(svg, cx, y(d.n) - 7, d.n, { 'text-anchor': 'middle', class: 'valor-txt' });
       const hit = el('rect', { x: m.l + banda * i, y: m.t, width: banda, height: ih, class: 'hit', tabindex: 0, 'aria-label': `${d.etiqueta}: ${d.n}` }, svg);
       const marca = marcas.lastElementChild && d.n > 0 ? marcas.lastElementChild : null;
@@ -158,12 +160,12 @@
       columnas(c, datos.tramos.map((t) => Object.assign({}, t, {
         tip: (d) => `<strong>Promedio ${d.etiqueta}</strong><div class="fila-t">Participantes <b>${d.n}</b></div>` +
           (d.nombres.length ? `<div class="muted" style="margin-top:4px">${d.nombres.slice(0, 6).map(esc).join(', ')}${d.nombres.length > 6 ? '…' : ''}</div>` : ''),
-      })), datos.umbral != null ? { umbralX: datos.umbral / 100, umbralTxt: `Aprueba con más de ${datos.umbral}` } : {});
+      })), datos.umbral != null ? { umbralX: datos.umbral / 100, umbralTxt: `Mínimo ${datos.umbral}` } : {});
     },
     sesiones(c) {
       columnas(c, datos.porSesion.map((g) => ({
         etiqueta: g.nombre.length > 14 ? g.nombre.slice(0, 13) + '…' : g.nombre, n: g.n,
-        tip: () => `<strong>${esc(g.nombre)}</strong><div class="fila-t">Promedio <b>${g.conNota ? g.n : '—'}</b></div><div class="fila-t">Participantes <b>${g.participantes}</b></div><div class="fila-t">Con nota <b>${g.conNota}</b></div><div class="fila-t">Umbral <b>más de ${g.umbral}</b></div>`,
+        tip: () => `<strong>${esc(g.nombre)}</strong><div class="fila-t">Promedio <b>${g.conNota ? g.n : '—'}</b></div><div class="fila-t">Participantes <b>${g.participantes}</b></div><div class="fila-t">Con nota <b>${g.conNota}</b></div><div class="fila-t">Mínimo <b>${g.umbral}</b></div>`,
       })), { escala: 100 });
     },
     criterios(c) {

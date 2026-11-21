@@ -15,7 +15,8 @@
   <section class="panel panel-pad" id="estudiantes">
     <h2>Estudiantes</h2>
     <ol>
-      <li><strong>Entra con el enlace de tu sesión</strong> o elige la sesión en la pantalla de inicio. Tu usuario es tu matrícula. La primera vez, la contraseña también es tu matrícula y el sistema te pedirá crear una propia (al menos 6 caracteres). Si la olvidas, tu profesor puede restablecerla.</li>
+      <li><strong>Regístrate la primera vez.</strong> En la pantalla de inicio pulsa "Registrarme" y escribe tu matrícula, tu nombre completo tal como te agregó tu profesor y una contraseña (al menos 6 caracteres) dos veces. Guárdala bien: no hay forma de recuperarla por tu cuenta; si la olvidas, solo tu profesor puede restablecerla.</li>
+      <li><strong>Entra con tu matrícula y tu contraseña.</strong> Desde entonces es lo único que necesitas, también si entras con el enlace de tu sesión.</li>
       <li><strong>Espera la ronda.</strong> La evaluación es por turnos: tu profesor abre la ronda de quien expone y solo a esa persona puedes evaluar mientras siga abierta. Sin ronda abierta verás "Esperando la siguiente ronda"; la página se actualiza sola, no hace falta recargar.</li>
       <li><strong>Evalúa a quien expone.</strong> En cada criterio de la rúbrica elige un nivel, de <%= escala[0] %> (0) a <%= escala[4] %> (4); cada nivel trae su descripción para guiarte. Hay que calificar todos los criterios. Con el teclado puedes pulsar 0 a 4. Si la ronda se cierra antes de que envíes, la evaluación no se guarda: envíala durante la exposición.</li>
       <li><strong>Deja observaciones si quieres.</strong> Son opcionales. Tu compañero las verá en su resultado sin tu nombre; tu profesor sí ve quién las escribió.</li>
@@ -27,11 +28,11 @@
     <h2>Profesores</h2>
     <ol>
       <li><strong>Entra como administrador</strong> desde la pantalla de inicio con tu contraseña. Puedes cambiarla en Configuración.</li>
-      <li><strong>Crea una sesión</strong> con nombre y fecha. Cada sesión tiene su propia lista, su rúbrica (la general o una propia) y su umbral de aprobación.</li>
-      <li><strong>Carga la lista de estudiantes</strong> desde Excel o CSV con las columnas "Nombre completo" y "Matrícula", o agrégalos a mano. Hay una plantilla de Excel para descargar. Solo pueden entrar quienes están en la lista. Si alguien olvida su contraseña, usa "Restablecer contraseña" en la lista: volverá a entrar con su matrícula.</li>
-      <li><strong>Revisa la rúbrica y el umbral.</strong> Por defecto es la rúbrica UNAPEC de trabajos finales de posgrado: 9 criterios con su peso, niveles de 0 a 4 y la descripción de cada nivel. Puedes editarla; con <%= escala[4] %> en todos los criterios activos se deben obtener 100 puntos. Se aprueba con más puntos que el umbral.</li>
+      <li><strong>Crea una sesión</strong> con nombre y fecha. Cada sesión tiene su propia lista, su rúbrica (la general o una propia) y su mínimo para aprobar.</li>
+      <li><strong>Carga la lista de estudiantes</strong> desde Excel o CSV con las columnas "Nombre completo" y "Matrícula", o agrégalos a mano. Hay una plantilla de Excel para descargar. Solo pueden registrarse quienes están en la lista; cada estudiante crea su cuenta la primera vez con su matrícula, su nombre y una contraseña. Si alguien olvida su contraseña, usa "Restablecer contraseña" en la lista: tendrá que registrarse de nuevo, sin perder sus evaluaciones.</li>
+      <li><strong>Revisa la rúbrica y el mínimo para aprobar.</strong> Por defecto es la rúbrica UNAPEC de trabajos finales de posgrado: 9 criterios con su peso, niveles de 0 a 4 y la descripción de cada nivel. Puedes editarla; con <%= escala[4] %> en todos los criterios activos se deben obtener 100 puntos. Se aprueba con el mínimo de la sesión o más (80 por defecto, como en la rúbrica).</li>
       <li><strong>Comparte el enlace de la sesión</strong> con tus estudiantes. Si se filtra, genera uno nuevo y el anterior deja de funcionar.</li>
-      <li><strong>Dirige las rondas.</strong> En la página de la sesión elige a quien expone y pulsa "Abrir ronda". Sus compañeros solo pueden evaluarlo a él y ves en vivo cuántos ya lo hicieron. Al terminar, pulsa "Cerrar ronda" y abre la del siguiente. Puedes volver a abrir la ronda de alguien que ya expuso.</li>
+      <li><strong>Dirige las rondas.</strong> En la página de la sesión elige a quien expone y pulsa "Abrir ronda". Mientras siga abierta, sus compañeros solo pueden evaluar ese trabajo y ves en vivo cuántos ya enviaron su evaluación. Al terminar, pulsa "Cerrar ronda" y abre la del siguiente. Puedes volver a abrir la ronda de alguien que ya expuso.</li>
       <li><strong>Sigue los resultados</strong> en el dashboard, en Participantes y en Evaluaciones, donde también ves las observaciones. Exporta todo a Excel con el resumen, los resultados y cada evaluación por criterio.</li>
       <li><strong>Cierra la sesión</strong> cuando terminen. Los estudiantes podrán consultar su resultado, pero ya no evaluar.</li>
     </ol>

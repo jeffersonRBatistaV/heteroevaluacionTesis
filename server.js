@@ -94,11 +94,13 @@ app.use((req, res, next) => {
   res.locals.ruta = req.path;
   res.locals.estado = (r) => {
     if (!r || r.n_eval < config.minEvaluaciones || r.promedio == null) return 'pendiente';
-    return r.promedio > (r.umbral ?? config.notaAprobacion) ? 'aprobado' : 'reprobado';
+    return r.promedio >= (r.umbral ?? config.notaAprobacion) ? 'aprobado' : 'reprobado';
   };
   res.locals.escala = ESCALA;
   res.locals.fecha = fecha;
   res.locals.iniciales = iniciales;
+  // "1 evaluación" / "3 evaluaciones"
+  res.locals.plural = (n, uno, varios) => `${n} ${Number(n) === 1 ? uno : varios}`;
   res.locals.icono = icono;
   res.locals.assetVer = ASSET_VER;
   res.locals.flash = req.session.flash || null;

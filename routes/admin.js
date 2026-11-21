@@ -22,7 +22,7 @@ const cfg = () => ({
 function estadoDe(f) {
   const { nota, min } = cfg();
   if (f.n_eval < min || f.promedio == null) return 'pendiente';
-  return f.promedio > (f.umbral ?? nota) ? 'aprobado' : 'reprobado';
+  return f.promedio >= (f.umbral ?? nota) ? 'aprobado' : 'reprobado';
 }
 
 // Segunda validación en el servidor: el texto escrito en la ventana debe coincidir
@@ -221,10 +221,10 @@ r.post('/sesion/:id/rubrica', requiereAdmin, (req, res) => {
   if (req.body.umbral !== undefined) {
     const u = leerUmbral(req.body.umbral);
     if (u == null) {
-      req.session.flashError = 'El umbral de aprobación debe ser un número entre 1 y 100.';
+      req.session.flashError = 'El mínimo para aprobar debe ser un número entre 1 y 100.';
       return res.redirect(`/admin/sesion/${s.id}#rubrica`);
     }
-    if (u !== s.umbral) { q.cambiarUmbral(s.id, u); mensajes.push(`Umbral de aprobación: más de ${u} puntos.`); }
+    if (u !== s.umbral) { q.cambiarUmbral(s.id, u); mensajes.push(`Mínimo para aprobar: ${u} puntos.`); }
   }
   if (req.body.rubrica === 'propia' && s.rubrica_general) {
     q.usarRubrica(s.id, q.copiarRubrica(rg, `Rúbrica de ${s.nombre}`));
@@ -234,7 +234,7 @@ r.post('/sesion/:id/rubrica', requiereAdmin, (req, res) => {
     q.borrarRubricaSiHuerfana(s.rubrica_id);
     mensajes.push('La sesión ahora usa la rúbrica general.');
   }
-  req.session.flash = mensajes.length ? mensajes.join(' ') : 'Sin cambios en la rúbrica ni en el umbral.';
+  req.session.flash = mensajes.length ? mensajes.join(' ') : 'Sin cambios en la rúbrica ni en el mínimo para aprobar.';
   res.redirect(`/admin/sesion/${s.id}#rubrica`);
 });
 
@@ -303,7 +303,7 @@ r.post('/participante/:id/clave', requiereAdmin, (req, res) => {
   const p = q.participantePorId(Number(req.params.id));
   if (!p) return res.redirect('/admin/participantes');
   q.guardarClaveParticipante(p.id, null);
-  req.session.flash = `Contraseña de ${p.nombre} restablecida: ahora entra con su matrícula (${p.matricula}) y crea una nueva.`;
+  req.session.flash = `Contraseña de ${p.nombre} borrada: tendrá que registrarse de nuevo con su matrícula, su nombre y una contraseña nueva.`;
   res.redirect(String(req.body.volver || '').startsWith('/admin/') ? req.body.volver : `/admin/participante/${p.id}`);
 });
 
