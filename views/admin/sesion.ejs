@@ -1,13 +1,13 @@
 <%- include('../partials/header', { titulo: s.nombre }) %>
 <%
-  const entraron = lista.filter(f => f.ultimo_ingreso).length;
+  const entraron = lista.filter(f => f.clave_propia).length;
   const rubricaOk = Math.abs(suma - 100) < 0.001 && criterios.length > 0;
   const enlace = origen + '/s/' + s.codigo;
   const prep = [
     { ok: lista.length > 0, titulo: 'Lista de participantes', txt: lista.length ? lista.length + ' estudiantes cargados' : 'Aún no hay nadie en la lista', ir: '#lista', accion: 'Cargar lista' },
     { ok: rubricaOk, titulo: 'Rúbrica', txt: rubricaOk ? criterios.length + ' criterios, suman 100' : 'Los criterios no suman 100', ir: '#rubrica', accion: 'Revisar rúbrica' },
     { ok: true, titulo: 'Umbral de aprobación', txt: 'Aprueba con más de ' + s.umbral + ' puntos', ir: '#rubrica', accion: 'Cambiar' },
-    { ok: !!s.abierta, titulo: 'Sesión abierta', txt: s.abierta ? 'Los estudiantes pueden evaluar' : 'Cerrada: solo consulta', ir: '#compartir', accion: s.abierta ? 'Copiar enlace' : 'Abrir en Ajustes' },
+    { ok: !!s.abierta, titulo: 'Sesión abierta', txt: s.abierta ? 'Abre la ronda de quien expone' : 'Cerrada: solo consulta', ir: '#compartir', accion: s.abierta ? 'Copiar enlace' : 'Abrir en Ajustes' },
   ];
 %>
 <a href="/admin/sesiones" class="volver"><%- icono('flecha', 16) %>Todas las sesiones</a>
@@ -39,6 +39,37 @@
   </ul>
 </section>
 
+<% { const ex = ronda.expositor; const porExponer = lista.filter(f => !f.expuso_en); const expuestos = lista.filter(f => f.expuso_en); %>
+<section class="panel panel-pad ronda <%= ex ? 'activa' : '' %>" id="ronda" aria-label="Ronda de evaluación"
+  <% if (ex) { %>data-ronda-sesion="<%= s.id %>" data-expositor="<%= ex.id %>"<% } %>>
+  <% if (!s.abierta) { %>
+    <div class="ronda-info"><h2>Rondas de evaluación</h2><p class="small muted">La sesión está cerrada. Ábrela para iniciar rondas.</p></div>
+  <% } else if (ex) { %>
+    <div class="ronda-info">
+      <p class="eyebrow"><span class="punto-vivo" aria-hidden="true"></span>Ronda abierta</p>
+      <h2>Expone <%= ex.nombre %></h2>
+      <p class="small ink-2"><strong data-ronda-recibidas><%= ronda.recibidas %></strong> de <%= ronda.esperadas %> compañeros ya lo evaluaron. El conteo se actualiza solo.</p>
+    </div>
+    <form method="post" action="/admin/sesion/<%= s.id %>/ronda/cerrar"><button class="btn">Cerrar ronda</button></form>
+  <% } else if (!lista.length) { %>
+    <div class="ronda-info"><h2>Ninguna ronda abierta</h2><p class="small muted">Carga la lista de participantes para poder abrir rondas.</p></div>
+  <% } else { %>
+    <div class="ronda-info">
+      <h2>Ninguna ronda abierta</h2>
+      <p class="small muted"><%= ronda.expusieron %> de <%= ronda.participantes %> ya expusieron. Elige a quien expone ahora: mientras su ronda esté abierta, sus compañeros solo podrán evaluarlo a él.</p>
+    </div>
+    <form method="post" action="/admin/sesion/<%= s.id %>/ronda" class="ronda-abrir">
+      <label for="r-expositor" class="sr-only">Quién expone</label>
+      <select id="r-expositor" name="participante" required>
+        <% if (porExponer.length) { %><optgroup label="Por exponer"><% porExponer.forEach(f => { %><option value="<%= f.id %>"><%= f.nombre %></option><% }) %></optgroup><% } %>
+        <% if (expuestos.length) { %><optgroup label="Ya expusieron (abrir de nuevo)"><% expuestos.forEach(f => { %><option value="<%= f.id %>"><%= f.nombre %> · <%= f.n_eval %> evaluaciones</option><% }) %></optgroup><% } %>
+      </select>
+      <button class="btn">Abrir ronda</button>
+    </form>
+  <% } %>
+</section>
+<% } %>
+
 <section class="kpis kpis-3" aria-label="Resumen de la sesión">
   <a class="panel kpi kpi-link" href="#lista" data-ir-pestana><span class="label">Participantes</span><span class="valor"><%= s.n_participantes %></span><span class="nota"><%= entraron %> ya entraron</span></a>
   <a class="panel kpi kpi-link" href="/admin/evaluaciones?sesion=<%= s.id %>"><span class="label">Evaluaciones</span><span class="valor"><%= s.n_evaluaciones %></span><span class="nota">Ver el registro</span></a>
@@ -57,7 +88,7 @@
   <div class="panel-head">
     <div>
       <h2>Lista de participantes</h2>
-      <p>Solo pueden entrar los estudiantes de esta lista, con su nombre y su matrícula tal como aparecen aquí.</p>
+      <p>Solo pueden entrar los estudiantes de esta lista. Su usuario es la matrícula; la primera vez la contraseña también es la matrícula y luego crean una propia.</p>
     </div>
     <a class="small" href="/admin/plantilla.xlsx"><%- icono('descargar', 14) %> Plantilla de Excel</a>
   </div>
@@ -108,13 +139,14 @@
         <% if (!lista.length) { %><tr><td colspan="6"><div class="vacio"><strong>La lista está vacía</strong><span>Importa un Excel o agrega a los estudiantes a mano. Mientras la lista esté vacía nadie podrá entrar a esta sesión.</span></div></td></tr><% } %>
         <% lista.forEach(f => { %>
           <tr data-texto="<%= (f.nombre + ' ' + f.matricula).toLowerCase() %>">
-            <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %></span></a></td>
-            <td><% if (f.ultimo_ingreso) { %><span class="chip-info abierta"><%- icono('check', 12) %>Sí</span><% } else { %><span class="chip-info cerrada">Aún no</span><% } %></td>
+            <td><a href="/admin/participante/<%= f.id %>" class="persona" style="text-decoration:none; color:inherit"><strong><%= f.nombre %></strong><span><%= f.matricula %><%= ronda.expositor && ronda.expositor.id === f.id ? ' · exponiendo ahora' : f.expuso_en ? ' · ya expuso' : ' · por exponer' %></span></a></td>
+            <td><% if (f.clave_propia) { %><span class="chip-info abierta" title="Ya creó su contraseña"><%- icono('check', 12) %>Sí</span><% } else if (f.ultimo_ingreso) { %><span class="chip-info cerrada" title="Entró pero aún no crea su contraseña">Sin contraseña</span><% } else { %><span class="chip-info cerrada">Aún no</span><% } %></td>
             <td class="der solo-ancho"><%= f.n_eval %></td>
             <td class="der solo-ancho"><%= f.hechas %></td>
             <td class="der puntaje"><%= f.promedio ?? '—' %></td>
             <td class="der" style="white-space:nowrap">
               <button type="button" class="link" data-editar="<%= f.id %>">Editar</button>
+              <% if (f.clave_propia) { %><form method="post" action="/admin/participante/<%= f.id %>/clave"><input type="hidden" name="volver" value="/admin/sesion/<%= s.id %>#lista"><button class="link" data-confirmar="¿Restablecer la contraseña de <%= f.nombre %>?" data-detalle="Su contraseña volverá a ser su matrícula (<%= f.matricula %>) y deberá crear una nueva al entrar. Sus evaluaciones no cambian." data-accion="Restablecer">Restablecer contraseña</button></form><% } %>
               <form method="post" action="/admin/participante/<%= f.id %>/borrar"><input type="hidden" name="volver" value="/admin/sesion/<%= s.id %>#lista"><button class="link peligro" data-confirmar="¿Quitar a <%= f.nombre %> de la lista?" data-detalle="Ya no podrá entrar, y se borrarán sus <%= f.n_eval %> evaluaciones recibidas y <%= f.hechas %> hechas. No se puede deshacer." data-escribir="<%= f.matricula %>" data-accion="Quitar de la lista">Quitar</button></form>
             </td>
           </tr>

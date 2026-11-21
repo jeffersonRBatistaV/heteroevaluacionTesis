@@ -134,11 +134,12 @@ async function generarExcel({ nota, min }, estadoDe, f) {
     ...(criterios.length
       ? criterios.map((c) => ({ header: `${c.nombre} (máx. ${c.puntos})`, key: `c${c.id}`, width: 20 }))
       : [{ header: 'Calificación por criterio', key: 'crit', width: 70 }]),
+    { header: 'Observaciones', key: 'obs', width: 50 },
   ];
   evaluaciones.forEach((e) => {
     // selecciones: "criterio:opcion:puntos,…"
     const sel = Object.fromEntries(String(e.selecciones || '').split(',').filter(Boolean).map((t) => { const [c, o, pt] = t.split(':'); return [Number(c), { o: Number(o), pt: Number(pt) }]; }));
-    const d = { id: e.id, fecha: e.actualizado_en, ses: e.sesion_nombre, em: e.evaluador_mat, en: e.evaluador, dm: e.evaluado_mat, dn: e.evaluado, pt: e.puntaje_total, crit: e.criterios || '' };
+    const d = { id: e.id, fecha: e.actualizado_en, ses: e.sesion_nombre, em: e.evaluador_mat, en: e.evaluador, dm: e.evaluado_mat, dn: e.evaluado, pt: e.puntaje_total, crit: e.criterios || '', obs: e.comentario || '' };
     criterios.forEach((c) => (d[`c${c.id}`] = sel[c.id] ? `${ESCALA[sel[c.id].o - 1]} (${sel[c.id].pt})` : '—'));
     const row = ws2.addRow(d);
     row.getCell('pt').font = { bold: true };

@@ -36,6 +36,8 @@ db.exec(`
     abierta INTEGER NOT NULL DEFAULT 1,
     codigo TEXT,
     umbral REAL NOT NULL DEFAULT 80,
+    modo TEXT NOT NULL DEFAULT 'turnos',
+    expositor_id INTEGER,
     creado_en TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -186,6 +188,17 @@ db.exec('CREATE INDEX IF NOT EXISTS participantes_sesion ON participantes(sesion
 if (!columnas('sesiones').includes('umbral')) db.exec(`ALTER TABLE sesiones ADD COLUMN umbral REAL NOT NULL DEFAULT ${Number(process.env.NOTA_APROBACION || 80)}`);
 // v8: el tutorial se muestra solo la primera vez que cada persona entra
 if (!columnas('participantes').includes('tutorial_visto')) db.exec('ALTER TABLE participantes ADD COLUMN tutorial_visto INTEGER NOT NULL DEFAULT 0');
+// v10: evaluación por turnos (el profesor abre la ronda de quien expone) y observaciones en cada evaluación.
+// Todas las sesiones son por turnos: solo se evalúa al expositor de la ronda abierta.
+if (!columnas('sesiones').includes('modo')) db.exec("ALTER TABLE sesiones ADD COLUMN modo TEXT NOT NULL DEFAULT 'turnos'");
+db.exec("UPDATE sesiones SET modo = 'turnos' WHERE modo <> 'turnos'");
+if (!columnas('sesiones').includes('expositor_id')) db.exec('ALTER TABLE sesiones ADD COLUMN expositor_id INTEGER');
+// Momento en que se abrió por primera vez la ronda del participante (null = aún no expone)
+if (!columnas('participantes').includes('expuso_en')) db.exec('ALTER TABLE participantes ADD COLUMN expuso_en TEXT');
+if (!columnas('evaluaciones').includes('comentario')) db.exec("ALTER TABLE evaluaciones ADD COLUMN comentario TEXT NOT NULL DEFAULT ''");
+// v11: acceso con matrícula y contraseña. Sin clave propia (null), la contraseña inicial es la matrícula
+// y el estudiante debe crear la suya al entrar por primera vez.
+if (!columnas('participantes').includes('clave')) db.exec('ALTER TABLE participantes ADD COLUMN clave TEXT');
 
 // ---------- Datos iniciales ----------
 const RG = rubricaGeneralId();
@@ -245,7 +258,7 @@ const q = {
   // Sesiones abiertas, para el selector del ingreso (por fecha)
   sesionesAbiertas: () => db.prepare('SELECT id, nombre, fecha, codigo, abierta, umbral FROM sesiones ORDER BY abierta DESC, fecha DESC, nombre').all(),
   crearSesion: (nombre, fecha, rubricaId, umbral = 80) =>
-    Number(db.prepare('INSERT INTO sesiones (nombre, fecha, rubrica_id, codigo, umbral) VALUES (?, ?, ?, ?, ?)').run(nombre, fecha, rubricaId, nuevoCodigo(), umbral).lastInsertRowid),
+    Number(db.prepare("INSERT INTO sesiones (nombre, fecha, rubrica_id, codigo, umbral, modo) VALUES (?, ?, ?, ?, ?, 'turnos')").run(nombre, fecha, rubricaId, nuevoCodigo(), umbral).lastInsertRowid),
   cambiarUmbral: (id, umbral) => db.prepare('UPDATE sesiones SET umbral = ? WHERE id = ?').run(umbral, id),
   actualizarSesion: (id, nombre, fecha, abierta) =>
     db.prepare('UPDATE sesiones SET nombre = ?, fecha = ?, abierta = ? WHERE id = ?').run(nombre, fecha, abierta ? 1 : 0, id),
@@ -258,6 +271,26 @@ const q = {
     }),
   sesionPorCodigo: (codigo) => db.prepare('SELECT * FROM sesiones WHERE codigo = ?').get(String(codigo || '').toUpperCase()),
   regenerarCodigo: (id) => db.prepare('UPDATE sesiones SET codigo = ? WHERE id = ?').run(nuevoCodigo(), id),
+
+  // ---------- Rondas: el profesor abre la evaluación de quien expone ----------
+  abrirRonda: (sesionId, participanteId) =>
+    tx(() => {
+      db.prepare('UPDATE sesiones SET expositor_id = ? WHERE id = ?').run(participanteId, sesionId);
+      db.prepare("UPDATE participantes SET expuso_en = COALESCE(expuso_en, datetime('now')) WHERE id = ? AND sesion_id = ?").run(participanteId, sesionId);
+    }),
+  cerrarRonda: (sesionId) => db.prepare('UPDATE sesiones SET expositor_id = NULL WHERE id = ?').run(sesionId),
+  // Quién expone ahora y cuántos compañeros ya lo evaluaron
+  estadoRonda: (sesionId) => {
+    const s = db.prepare('SELECT id, abierta, expositor_id FROM sesiones WHERE id = ?').get(sesionId);
+    if (!s) return null;
+    const n = db.prepare('SELECT COUNT(*) AS n, COUNT(expuso_en) AS expusieron FROM participantes WHERE sesion_id = ?').get(sesionId);
+    const ex = s.expositor_id ? db.prepare('SELECT id, nombre, matricula FROM participantes WHERE id = ? AND sesion_id = ?').get(s.expositor_id, sesionId) : null;
+    return {
+      abierta: !!s.abierta, expositor: ex || null,
+      recibidas: ex ? db.prepare('SELECT COUNT(*) AS n FROM evaluaciones WHERE evaluado_id = ?').get(ex.id).n : 0,
+      esperadas: Math.max(0, n.n - 1), participantes: n.n, expusieron: n.expusieron,
+    };
+  },
 
   // ---------- Rúbricas ----------
   rubrica: (id) => db.prepare('SELECT * FROM rubricas WHERE id = ?').get(id),
@@ -299,7 +332,7 @@ const q = {
   // ---------- Participantes ----------
   participantePorId: (id) =>
     db.prepare(
-      `SELECT p.*, s.nombre AS sesion_nombre, s.fecha AS sesion_fecha, s.abierta, s.rubrica_id, s.umbral
+      `SELECT p.*, s.nombre AS sesion_nombre, s.fecha AS sesion_fecha, s.abierta, s.rubrica_id, s.umbral, s.expositor_id
          FROM participantes p JOIN sesiones s ON s.id = p.sesion_id WHERE p.id = ?`
     ).get(id),
   participanteEnSesion: (sesionId, matricula) =>
@@ -308,11 +341,17 @@ const q = {
     Number(db.prepare('INSERT INTO participantes (sesion_id, nombre, matricula) VALUES (?, ?, ?)').run(sesionId, nombre, matricula).lastInsertRowid),
   actualizarParticipante: (id, nombre, matricula) =>
     db.prepare('UPDATE participantes SET nombre = ?, matricula = ? WHERE id = ?').run(nombre, matricula, id),
+  // clave: hash "scrypt$…" o null para volver a la contraseña inicial (la matrícula)
+  guardarClaveParticipante: (id, clave) => db.prepare('UPDATE participantes SET clave = ? WHERE id = ?').run(clave, id),
   marcarTutorialVisto: (id) => db.prepare('UPDATE participantes SET tutorial_visto = 1 WHERE id = ?').run(id),
   leerConfig: (k) => db.prepare('SELECT valor FROM config WHERE clave = ?').get(k)?.valor ?? null,
   escribirConfig: (k, v) => db.prepare('INSERT INTO config (clave, valor) VALUES (?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor').run(k, String(v)),
   marcarIngreso: (id) => db.prepare("UPDATE participantes SET ultimo_ingreso = datetime('now') WHERE id = ?").run(id),
-  borrarParticipante: (id) => db.prepare('DELETE FROM participantes WHERE id = ?').run(id),
+  borrarParticipante: (id) =>
+    tx(() => {
+      db.prepare('UPDATE sesiones SET expositor_id = NULL WHERE expositor_id = ?').run(id);
+      db.prepare('DELETE FROM participantes WHERE id = ?').run(id);
+    }),
   // Agrega varias filas {nombre, matricula} a la lista de una sesión. Las matrículas que ya están se actualizan
   // solo si se pide; si no, se informan como omitidas.
   importarLista: (sesionId, filas, actualizar) =>
@@ -337,7 +376,7 @@ const q = {
   seleccionesDe: (evaluacionId) =>
     Object.fromEntries(db.prepare('SELECT criterio_id, opcion FROM evaluacion_criterios WHERE evaluacion_id = ?').all(evaluacionId).map((r) => [r.criterio_id, r.opcion])),
   // selecciones: { criterio_id: opcion 1..5 }. Devuelve null si falta calificar algún criterio activo.
-  guardarEvaluacion: (evaluadorId, evaluadoId, rubricaId, selecciones) =>
+  guardarEvaluacion: (evaluadorId, evaluadoId, rubricaId, selecciones, comentario = '') =>
     tx(() => {
       const criterios = q.criteriosActivos(rubricaId);
       const elegidos = criterios.map((c) => ({ c, op: Number(selecciones[c.id]) }));
@@ -348,22 +387,31 @@ const q = {
       let evId;
       if (existente) {
         evId = existente.id;
-        db.prepare("UPDATE evaluaciones SET puntaje_total = ?, actualizado_en = datetime('now') WHERE id = ?").run(total, evId);
+        db.prepare("UPDATE evaluaciones SET puntaje_total = ?, comentario = ?, actualizado_en = datetime('now') WHERE id = ?").run(total, comentario, evId);
         db.prepare('DELETE FROM evaluacion_criterios WHERE evaluacion_id = ?').run(evId);
       } else {
-        evId = db.prepare('INSERT INTO evaluaciones (evaluador_id, evaluado_id, puntaje_total) VALUES (?, ?, ?)').run(evaluadorId, evaluadoId, total).lastInsertRowid;
+        evId = db.prepare('INSERT INTO evaluaciones (evaluador_id, evaluado_id, puntaje_total, comentario) VALUES (?, ?, ?, ?)').run(evaluadorId, evaluadoId, total, comentario).lastInsertRowid;
       }
       const ins = db.prepare('INSERT INTO evaluacion_criterios (evaluacion_id, criterio_id, opcion, puntos) VALUES (?, ?, ?, ?)');
       validos.forEach((v) => ins.run(evId, v.id, v.op, v.pts));
       return total;
     }),
   borrarEvaluacion: (id) => db.prepare('DELETE FROM evaluaciones WHERE id = ?').run(id),
-  borrarEvaluaciones: (f) => db.exec(`DELETE FROM evaluaciones WHERE evaluado_id IN (SELECT p.id FROM participantes p WHERE 1=1 ${filtro(f)})`),
+  // Borra las evaluaciones y reinicia las rondas (nadie ha expuesto) de una sesión o de todas
+  borrarEvaluaciones: (f = {}) =>
+    tx(() => {
+      db.exec(`DELETE FROM evaluaciones WHERE evaluado_id IN (SELECT p.id FROM participantes p WHERE 1=1 ${filtro(f)})`);
+      db.exec(`UPDATE participantes SET expuso_en = NULL WHERE 1=1 ${filtro(f, 'participantes')}`);
+      db.exec(`UPDATE sesiones SET expositor_id = NULL WHERE 1=1 ${f.sesionId ? `AND id = ${Number(f.sesionId)}` : ''}`);
+    }),
+  // Observaciones que recibió alguien, sin datos del autor y en orden alfabético para no delatarlo
+  comentariosDe: (id) =>
+    db.prepare("SELECT comentario FROM evaluaciones WHERE evaluado_id = ? AND comentario <> '' ORDER BY comentario").all(id).map((r) => r.comentario),
 
   // Compañeros de la misma sesión, con lo que el visitante ya les dio
   listaParaEvaluador: (u) =>
     db.prepare(
-      `SELECT p.id, p.nombre,
+      `SELECT p.id, p.nombre, p.expuso_en,
               (SELECT COUNT(*) FROM evaluaciones e WHERE e.evaluado_id = p.id) AS n_eval,
               (SELECT puntaje_total FROM evaluaciones e WHERE e.evaluado_id = p.id AND e.evaluador_id = ?) AS mi_puntaje
          FROM participantes p WHERE p.sesion_id = ? AND p.id <> ? ORDER BY p.nombre`
@@ -371,7 +419,7 @@ const q = {
 
   resultados: (f = {}) =>
     db.prepare(
-      `SELECT p.id, p.nombre, p.matricula, p.creado_en, p.ultimo_ingreso, p.sesion_id,
+      `SELECT p.id, p.nombre, p.matricula, p.creado_en, p.ultimo_ingreso, p.sesion_id, p.expuso_en, (p.clave IS NOT NULL) AS clave_propia,
               s.nombre AS sesion_nombre, s.fecha AS sesion_fecha, s.umbral,
               COUNT(e.id) AS n_eval,
               ROUND(AVG(e.puntaje_total), 2) AS promedio,
@@ -414,7 +462,7 @@ const q = {
   // Registro de evaluaciones; `persona` limita a las hechas o recibidas por alguien
   evaluaciones: (f = {}, persona) =>
     db.prepare(
-      `SELECT e.id, e.puntaje_total, e.creado_en, e.actualizado_en, e.evaluador_id, e.evaluado_id,
+      `SELECT e.id, e.puntaje_total, e.comentario, e.creado_en, e.actualizado_en, e.evaluador_id, e.evaluado_id,
               (SELECT GROUP_CONCAT(ec.criterio_id || ':' || ec.opcion || ':' || ec.puntos) FROM evaluacion_criterios ec WHERE ec.evaluacion_id = e.id) AS selecciones,
               (SELECT GROUP_CONCAT(c.nombre || ': ' || CASE ec.opcion ${ESCALA_SQL} END || ' (' || printf('%g', ec.puntos) || ')', ' · ')
                  FROM evaluacion_criterios ec JOIN criterios c ON c.id = ec.criterio_id

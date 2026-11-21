@@ -241,4 +241,50 @@
     fr.addEventListener('change', recalcular);
     recalcular();
   }
+
+  // Actualización en vivo del estudiante: cuando el profesor abre o cierra una ronda (o la sesión), la lista se recarga sola.
+  // En la página de evaluar (data-solo-avisar) no se recarga, para no perder lo marcado: se avisa y se bloquea el envío.
+  const vivo = document.getElementById('vivo');
+  if (vivo) {
+    let firma = vivo.dataset.firma, parado = false;
+    const soloAvisar = vivo.hasAttribute('data-solo-avisar');
+    const evaluado = Number(vivo.dataset.evaluado) || null;
+    const revisar = async () => {
+      if (parado || document.hidden) return;
+      try {
+        const r = await fetch('/estado.json', { cache: 'no-store', headers: { Accept: 'application/json' } });
+        if (r.status === 401) { parado = true; return; }
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.firma === firma) return;
+        if (!soloAvisar) { parado = true; location.reload(); return; }
+        firma = d.firma;
+        // ¿Todavía se puede enviar la evaluación de este compañero?
+        if (!d.abierta || d.expositor !== evaluado) {
+          parado = true;
+          const aviso = document.getElementById('aviso-ronda');
+          if (aviso) { aviso.hidden = false; aviso.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          const b = document.getElementById('btn-enviar');
+          if (b) b.disabled = true;
+        }
+      } catch (e) { /* sin conexión: se reintenta en la siguiente vuelta */ }
+    };
+    setInterval(revisar, 5000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
+  }
+
+  // Panel del profesor: el conteo de evaluaciones de la ronda abierta se actualiza solo
+  const ronda = document.querySelector('[data-ronda-sesion]');
+  if (ronda) {
+    const out = ronda.querySelector('[data-ronda-recibidas]');
+    setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        const r = await fetch(`/admin/sesion/${ronda.dataset.rondaSesion}/ronda.json`, { cache: 'no-store' });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (String(d.expositorId ?? '') === ronda.dataset.expositor && out) out.textContent = d.recibidas;
+      } catch (e) { /* se reintenta */ }
+    }, 4000);
+  }
 })();

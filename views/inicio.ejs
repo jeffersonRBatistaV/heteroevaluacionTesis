@@ -2,12 +2,13 @@
 <section class="inicio">
   <div data-lado="estudiante" <%= modo === 'admin' ? 'hidden' : '' %>>
     <h1>Heteroevaluación de tesis</h1>
-    <p class="lead">Ingresa con tu nombre y tu matrícula para evaluar a tus compañeros de sesión con la rúbrica del curso y consultar tu resultado.</p>
+    <p class="lead">Ingresa con tu matrícula y tu contraseña para evaluar a tus compañeros de sesión con la rúbrica del curso y consultar tu resultado.</p>
     <ol class="pasos">
-      <li><div><strong>Elige tu sesión</strong><span>Escribe tu nombre completo y tu matrícula tal como aparecen en la lista del profesor.</span></div></li>
+      <li><div><strong>Entra con tu matrícula</strong><span>Elige tu sesión y escribe tu matrícula. La primera vez la contraseña también es tu matrícula; luego crearás una propia.</span></div></li>
       <li><div><strong>Evalúa a tus compañeros</strong><span>En cada criterio elige una opción, de <%= escala[0] %> a <%= escala[4] %>.</span></div></li>
       <li><div><strong>Consulta tu resultado</strong><span>Se habilita cuando hayas evaluado al menos al <%= config.porcentajeParaVer %> % de tus compañeros.</span></div></li>
     </ol>
+    <p class="small" style="margin-top:22px"><a href="/instructivo">Leer el instructivo completo</a></p>
   </div>
 
   <div data-lado="admin" <%= modo === 'admin' ? '' : 'hidden' %>>
@@ -18,6 +19,7 @@
       <li><div><strong>Define la rúbrica y el umbral</strong><span>Elige los criterios, los puntos de cada opción y con cuántos puntos se aprueba.</span></div></li>
       <li><div><strong>Comparte el enlace y revisa</strong><span>Sigue el avance en el dashboard y exporta los resultados a Excel.</span></div></li>
     </ol>
+    <p class="small" style="margin-top:22px"><a href="/instructivo#profesores">Leer el instructivo completo</a></p>
   </div>
 
   <div class="panel entrar" id="ingreso">
@@ -30,7 +32,7 @@
       <% if (fija) { %><input type="hidden" name="codigo" value="<%= fija.codigo %>"><% } %>
       <div>
         <h2>Entrar como estudiante</h2>
-        <p class="sub">Escribe tu nombre y tu matrícula como te registró tu profesor. No importan mayúsculas ni tildes.</p>
+        <p class="sub">Tu usuario es tu matrícula, tal como te registró tu profesor.</p>
       </div>
       <div class="campo">
         <label for="sesion">Sesión</label>
@@ -43,12 +45,13 @@
         <span class="ayuda"><%= fija && !fija.abierta ? 'Esta sesión está cerrada: puedes entrar para consultar tus resultados.' : fija ? 'Entraste con el enlace de esta sesión.' : sesiones.length ? 'Ordenadas de la más reciente a la más antigua.' : 'Todavía no hay sesiones.' %></span>
       </div>
       <div class="campo">
-        <label for="nombre">Nombre completo</label>
-        <input id="nombre" name="nombre" value="<%= nombre %>" maxlength="80" autocomplete="name" required placeholder="María Pérez Gómez">
+        <label for="matricula">Usuario (matrícula)</label>
+        <input id="matricula" class="mono-in" name="matricula" value="<%= matricula %>" maxlength="30" required placeholder="2021-0456" autocapitalize="characters" autocomplete="username" spellcheck="false">
       </div>
       <div class="campo">
-        <label for="matricula">Matrícula</label>
-        <input id="matricula" class="mono-in" name="matricula" value="<%= matricula %>" maxlength="30" required placeholder="2021-0456" autocapitalize="characters" spellcheck="false">
+        <label for="clave-est">Contraseña</label>
+        <input id="clave-est" name="clave" type="password" maxlength="100" required autocomplete="current-password">
+        <span class="ayuda">La primera vez, tu contraseña es tu matrícula. Después crearás una propia.</span>
       </div>
       <% if (error) { %><p class="error" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></p><% } %>
       <button class="btn grande">Entrar</button>

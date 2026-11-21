@@ -1,6 +1,7 @@
 <%- include('partials/header', { titulo: 'Evaluar a ' + evaluado.nombre }) %>
+<% const bloqueada = cerrada || rondaCerrada; %>
 <a href="/participantes" class="volver"><%- icono('flecha', 16) %>Volver a la lista</a>
-<div class="page-head">
+<div class="page-head" id="vivo" data-firma="<%= firma %>" <%= bloqueada ? '' : 'data-solo-avisar' %> data-evaluado="<%= evaluado.id %>">
   <div class="evaluando">
     <span class="avatar" aria-hidden="true"><%= iniciales(evaluado.nombre) %></span>
     <div>
@@ -11,12 +12,14 @@
 </div>
 <div style="display:grid; gap:6px; margin-top:-6px">
   <p class="ink-2">Elige en cada criterio la opción que mejor describe la defensa de <strong><%= evaluado.nombre %></strong>, de <%= escala[0] %> a <%= escala[4] %>. Hay que calificar todos.</p>
-  <% if (!cerrada) { %><p class="atajos">Con teclado: pulsa <kbd>1</kbd> a <kbd>5</kbd> para calificar y pasar al siguiente criterio.</p><% } %>
+  <% if (!bloqueada) { %><p class="atajos">Con teclado: pulsa <kbd>1</kbd> a <kbd>5</kbd> para calificar y pasar al siguiente criterio.</p><% } %>
 </div>
 
 <% if (cerrada) { %><div class="flash err" role="status"><%- icono('reloj', 16) %><span>La sesión está cerrada. Esta evaluación ya no se puede modificar.</span></div><% } %>
+<% if (rondaCerrada) { %><div class="flash err" role="status"><%- icono('reloj', 16) %><span>La ronda de <%= evaluado.nombre %> ya se cerró. Esta evaluación ya no se puede modificar.</span></div><% } %>
+<div class="flash err" role="alert" id="aviso-ronda" hidden><%- icono('alerta', 16) %><span>Tu profesor cerró la ronda de <%= evaluado.nombre %>. Esta evaluación ya no se puede enviar. <a href="/participantes">Volver a la lista</a></span></div>
 <form method="post" action="/evaluar/<%= evaluado.id %>" id="form-eval" style="display:grid; gap:16px">
-  <fieldset <%= cerrada ? 'disabled' : '' %> style="border:0; padding:0; margin:0; min-width:0">
+  <fieldset <%= bloqueada ? 'disabled' : '' %> style="border:0; padding:0; margin:0; min-width:0">
   <ul class="rubrica">
     <% criterios.forEach(c => { const pts = [c.p1, c.p2, c.p3, c.p4, c.p5]; %>
       <li>
@@ -42,6 +45,13 @@
       </li>
     <% }) %>
   </ul>
+  <% if (criterios.length && (!bloqueada || comentario)) { %>
+  <div class="panel panel-pad campo observaciones">
+    <label for="comentario">Observaciones para <%= evaluado.nombre.split(' ')[0] %> <span class="muted" style="font-weight:400">(opcional)</span></label>
+    <textarea id="comentario" name="comentario" maxlength="600" rows="3" placeholder="Qué hizo bien y qué podría mejorar"><%= comentario %></textarea>
+    <span class="ayuda">Lo verá en su resultado sin tu nombre. Tu profesor sí ve quién lo escribió. Máximo 600 caracteres.</span>
+  </div>
+  <% } %>
   </fieldset>
   <% if (!criterios.length) { %><div class="panel vacio"><strong>La rúbrica de esta sesión no tiene criterios</strong><span>Avísale al administrador.</span></div><% } %>
   <div class="panel barra-eval">
@@ -53,7 +63,7 @@
       <div class="regla" id="regla-eval" style="--v: 0; --umbral: <%= usuario.umbral %>"><span class="fill"></span><span class="umbral"></span></div>
       <div class="regla-escala" aria-hidden="true"><span>0</span><span class="u" style="left: <%= usuario.umbral %>%"><%= usuario.umbral %></span><span>100</span></div>
     </div>
-    <button class="btn grande" id="btn-enviar" <%= cerrada || !criterios.length ? 'disabled' : '' %>><%= existente ? 'Guardar cambios' : 'Guardar y seguir' %></button>
+    <button class="btn grande" id="btn-enviar" <%= bloqueada || !criterios.length ? 'disabled' : '' %>><%= existente ? 'Guardar cambios' : 'Enviar evaluación' %></button>
   </div>
 </form>
 <script>window.UMBRAL = <%= usuario.umbral %>;</script>

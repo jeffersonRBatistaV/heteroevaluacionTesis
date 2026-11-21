@@ -10,8 +10,8 @@
       pasos: [
         paso('.conmutador', 'Estudiante o administrador', 'Usa este botón para cambiar entre el ingreso de estudiante y el del administrador (profesor). Es la misma pantalla para los dos.'),
         paso('#sesion', 'Elige tu sesión', 'Elige la sesión en la que te registró tu profesor. Si entraste con su enlace, ya viene elegida.'),
-        paso('#nombre', 'Tu nombre completo', 'Escríbelo como aparece en la lista del profesor. No importan mayúsculas ni tildes.'),
-        paso('#matricula', 'Tu matrícula', 'Tu nombre y tu matrícula deben coincidir con la lista de la sesión. Si no puedes entrar, pide a tu profesor que revise la lista.'),
+        paso('#matricula', 'Tu usuario', 'Tu usuario es tu matrícula, tal como aparece en la lista del profesor.'),
+        paso('#clave-est', 'Tu contraseña', 'La primera vez es tu matrícula; al entrar crearás una propia. Si la olvidas, pide a tu profesor que la restablezca.'),
         paso('[data-panel="estudiante"] .btn', 'Entrar', 'Listo: al entrar verás a tus compañeros de sesión para evaluarlos.', 'top'),
       ],
     },
@@ -20,7 +20,7 @@
     participantes: {
       pasos: [
         paso('.page-head h1', 'Eres jurado', 'Aquí evalúas a tus compañeros de sesión, y ellos te evalúan a ti.'),
-        paso('.siguiente', 'Tu siguiente evaluación', 'Este botón te lleva directo al próximo compañero pendiente. Al guardar, pasas solo al siguiente.'),
+        paso('.siguiente', 'Tu siguiente evaluación', 'Aquí aparece quién expone ahora y el botón para evaluarlo. Cuando tu profesor abra o cierre una ronda, la página se actualiza sola.'),
         paso('.progreso-eval', 'Tu avance', 'Cuántos compañeros llevas evaluados. Tu resultado se desbloquea cuando evalúas al menos al 95 % de ellos.'),
         paso('.grid-personas li:first-child', 'Evaluar a un compañero', 'Pulsa "Evaluar" para abrir la rúbrica. Si ya lo evaluaste, verás el puntaje que le diste y podrás editarlo mientras la sesión siga abierta.'),
         paso('.nav a[href="/mi-resultado"]', 'Mi resultado', 'Tu promedio, si apruebas y cómo te calificaron en cada criterio. Solo tú puedes ver tu resultado.'),

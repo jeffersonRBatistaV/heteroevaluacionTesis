@@ -46,6 +46,7 @@
     </nav>
     <div class="lateral-pie">
       <%- btnTutorial %>
+      <a class="btn sec chico" href="/instructivo" target="_blank" rel="noopener">Instructivo</a>
       <form method="post" action="/salir"><button class="btn sec chico">Cerrar sesión de administrador</button></form>
     </div>
   </aside>
@@ -66,6 +67,7 @@
         <a href="/mi-resultado" class="<%= ruta === '/mi-resultado' ? 'on' : '' %>">Mi resultado</a>
       <% } %>
       <% if (esAdmin && !usuario) { %><a href="/admin">Ir al panel</a><% } %>
+      <a href="/instructivo" class="<%= ruta === '/instructivo' ? 'on' : '' %>">Instructivo</a>
     </nav>
     <%- btnTutorial %>
     <% if (usuario) { %>

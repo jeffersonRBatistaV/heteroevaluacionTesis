@@ -1,18 +1,23 @@
 <%- include('partials/header', { titulo: 'Evaluar' }) %>
 <%
-  const hechas = lista.filter(p => p.mi_puntaje != null).length;
-  const pct = lista.length ? Math.round(hechas / lista.length * 100) : 0;
-  const pendientes = lista.filter(p => p.mi_puntaje == null);
-  const ordenada = [...pendientes, ...lista.filter(p => p.mi_puntaje != null)];
-  const requeridas = Math.ceil(lista.length * config.porcentajeParaVer / 100 - 1e-9);
+  // La evaluación es por turnos: solo cuentan los compañeros que ya expusieron (o exponen ahora)
+  const base = lista.filter(p => p.expuso_en);
+  const hechas = base.filter(p => p.mi_puntaje != null).length;
+  const pct = base.length ? Math.round(hechas / base.length * 100) : 0;
+  const requeridas = Math.ceil(base.length * config.porcentajeParaVer / 100 - 1e-9);
   const faltanVer = Math.max(0, requeridas - hechas);
   const primerNombre = usuario.nombre.split(' ')[0];
+  // Orden: quien expone primero, luego por exponer y al final los que ya expusieron
+  const exId = expositor && !expositor.yo ? expositor.id : null;
+  const ordenada = [...lista.filter(p => p.id === exId), ...lista.filter(p => p.id !== exId && !p.expuso_en), ...lista.filter(p => p.id !== exId && p.expuso_en)];
 %>
-<div class="page-head">
+<div class="page-head" id="vivo" data-firma="<%= firma %>">
   <div>
     <p class="eyebrow"><%= usuario.sesion_nombre %>, <%= fecha(usuario.sesion_fecha) %></p>
     <h1>Hola, <%= primerNombre %></h1>
-    <p class="lead"><%= usuario.abierta ? 'Eres jurado de tus compañeros: califica cada defensa con la rúbrica. Puedes corregir una evaluación mientras la sesión siga abierta.' : 'La sesión está cerrada. Puedes revisar tus evaluaciones, pero ya no cambiarlas.' %></p>
+    <p class="lead"><%= usuario.abierta
+      ? 'Eres jurado de tus compañeros. Tu profesor abre la evaluación de cada uno cuando expone; califícalo durante su ronda.'
+      : 'La sesión está cerrada. Puedes revisar tus evaluaciones, pero ya no cambiarlas.' %></p>
   </div>
 </div>
 
@@ -22,30 +27,47 @@
     <span>Tu profesor aún no ha cargado al resto de la sesión. Vuelve a entrar más tarde.</span>
   </div>
 <% } else { %>
-  <% if (usuario.abierta && pendientes.length) { const sig = pendientes[0]; %>
-    <section class="siguiente" aria-label="Siguiente evaluación">
-      <div>
-        <h2>Te toca evaluar a <%= sig.nombre %></h2>
-        <p><%= pendientes.length === 1 ? 'Es la última defensa que te falta.' : 'Te faltan ' + pendientes.length + ' defensas por evaluar.' %> <%= faltanVer ? 'Tu resultado se desbloquea con ' + faltanVer + ' más.' : '' %></p>
-      </div>
-      <a class="btn grande" href="/evaluar/<%= sig.id %>">Evaluar a <%= sig.nombre.split(' ')[0] %></a>
-    </section>
-  <% } else if (!pendientes.length) { %>
-    <section class="siguiente listo" aria-label="Evaluaciones completas">
-      <div>
-        <h2>Evaluaste a todos tus compañeros</h2>
-        <p>Gracias por completar tu parte como jurado. Ya puedes consultar tu resultado.</p>
-      </div>
-      <a class="btn grande" href="/mi-resultado">Ver mi resultado</a>
-    </section>
+  <% if (usuario.abierta) { const ev = exId ? lista.find(p => p.id === exId) : null; %>
+    <% if (expositor && expositor.yo) { %>
+      <section class="siguiente espera" aria-label="Ronda actual">
+        <div>
+          <h2>Estás exponiendo</h2>
+          <p>Tus compañeros te están evaluando ahora. Esta página se actualiza sola cuando tu profesor cierre la ronda.</p>
+        </div>
+      </section>
+    <% } else if (ev && ev.mi_puntaje == null) { %>
+      <section class="siguiente" aria-label="Ronda actual">
+        <div>
+          <p class="vivo-txt"><span class="punto-vivo" aria-hidden="true"></span>Ronda abierta</p>
+          <h2>Ahora expone <%= ev.nombre %></h2>
+          <p>Evalúalo antes de que tu profesor cierre su ronda.</p>
+        </div>
+        <a class="btn grande" href="/evaluar/<%= ev.id %>">Evaluar a <%= ev.nombre.split(' ')[0] %></a>
+      </section>
+    <% } else if (ev) { %>
+      <section class="siguiente listo" aria-label="Ronda actual">
+        <div>
+          <h2>Ya evaluaste a <%= ev.nombre %></h2>
+          <p>Le diste <%= ev.mi_puntaje %> de 100. Puedes corregirla mientras su ronda siga abierta. La siguiente aparecerá aquí sola.</p>
+        </div>
+        <a class="btn grande" href="/evaluar/<%= ev.id %>">Corregir</a>
+      </section>
+    <% } else { %>
+      <section class="siguiente espera" aria-label="Ronda actual">
+        <div>
+          <h2>Esperando la siguiente ronda</h2>
+          <p>Cuando tu profesor abra la evaluación de quien expone, aparecerá aquí. No hace falta recargar la página.</p>
+        </div>
+      </section>
+    <% } %>
   <% } %>
 
   <section class="panel panel-pad progreso-eval" aria-label="Tu avance">
-    <div><strong><%= hechas %> de <%= lista.length %></strong> <span class="muted">defensas evaluadas</span></div>
+    <div><strong><%= hechas %> de <%= base.length %></strong> <span class="muted">defensas evaluadas de las que ya ocurrieron</span></div>
     <div class="minibar" role="img" aria-label="<%= pct %>% completado"><span style="width: <%= pct %>%"></span></div>
     <span class="muted num"><%= pct %> %</span>
     <p class="aviso-ver small">
-      <% if (faltanVer) { %><%- icono('reloj', 15) %>Tu resultado se desbloquea al evaluar al <%= config.porcentajeParaVer %> % de tus compañeros: te falta<%= faltanVer === 1 ? '' : 'n' %> <strong><%= faltanVer %></strong>.<% } else { %><%- icono('check', 15) %>Ya puedes ver <a href="/mi-resultado">tu resultado</a>.<% } %>
+      <% if (faltanVer) { %><%- icono('reloj', 15) %>Tu resultado se desbloquea al evaluar al <%= config.porcentajeParaVer %> % de los compañeros que ya expusieron: te falta<%= faltanVer === 1 ? '' : 'n' %> <strong><%= faltanVer %></strong>.<% } else { %><%- icono('check', 15) %>Ya puedes ver <a href="/mi-resultado">tu resultado</a>.<% } %>
     </p>
   </section>
 
@@ -57,15 +79,28 @@
       <% } %>
     </div>
     <ul class="grid-personas">
-      <% ordenada.forEach(p => { const hecho = p.mi_puntaje != null; %>
+      <% ordenada.forEach(p => {
+           const hecho = p.mi_puntaje != null;
+           const enRonda = p.id === exId && usuario.abierta;
+           let estadoTxt, boton = null;
+           if (enRonda) {
+             estadoTxt = hecho ? 'Expone ahora · le diste ' + p.mi_puntaje + ' de 100' : 'Expone ahora';
+             boton = hecho ? 'Corregir' : 'Evaluar';
+           } else if (hecho) {
+             estadoTxt = 'Evaluado: le diste ' + p.mi_puntaje + ' de 100';
+             boton = 'Ver';
+           } else {
+             estadoTxt = p.expuso_en ? 'Ya expuso · no lo evaluaste en su ronda' : 'Aún no expone';
+           }
+      %>
         <li data-texto="<%= p.nombre.toLowerCase() %>">
-          <div class="persona-card <%= hecho ? 'hecho' : '' %>">
+          <div class="persona-card <%= hecho ? 'hecho' : '' %> <%= enRonda ? 'en-ronda' : '' %>">
             <span class="avatar" aria-hidden="true"><%- hecho ? icono('check', 18) : iniciales(p.nombre) %></span>
             <div class="info">
               <strong><%= p.nombre %></strong>
-              <span><%= hecho ? 'Evaluado: le diste ' + p.mi_puntaje + ' de 100' : 'Pendiente' %></span>
+              <span><%= estadoTxt %></span>
             </div>
-            <a class="btn <%= hecho || !usuario.abierta ? 'sec' : '' %> chico" href="/evaluar/<%= p.id %>"><%= !usuario.abierta ? 'Ver' : hecho ? 'Corregir' : 'Evaluar' %></a>
+            <% if (boton) { %><a class="btn <%= enRonda && !hecho ? '' : 'sec' %> chico" href="/evaluar/<%= p.id %>"><%= boton %></a><% } %>
           </div>
         </li>
       <% }) %>

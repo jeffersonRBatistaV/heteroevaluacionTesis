@@ -32,6 +32,14 @@
   <div style="margin-top:12px"><%- include('_tabla-evals', { lista: hechas, volver: '/admin/participante/' + p.id, ocultar: 'evaluador' }) %></div>
 </section>
 
+<form method="post" action="/admin/participante/<%= p.id %>/clave" class="acciones">
+  <% if (p.clave) { %>
+    <button class="btn sec" data-confirmar="¿Restablecer la contraseña de <%= p.nombre %>?" data-detalle="Su contraseña volverá a ser su matrícula (<%= p.matricula %>) y deberá crear una nueva al entrar. Sus evaluaciones no cambian." data-accion="Restablecer">Restablecer contraseña</button>
+    <span class="muted small">Para cuando el estudiante olvida su contraseña.</span>
+  <% } else { %>
+    <span class="muted small">Aún no crea su contraseña: entra con su matrícula (<%= p.matricula %>) como contraseña.</span>
+  <% } %>
+</form>
 <form method="post" action="/admin/participante/<%= p.id %>/borrar" class="acciones">
   <button class="btn peligro" data-confirmar="¿Eliminar a <%= p.nombre %>?" data-detalle="Se borrarán sus <%= recibidas.length %> evaluaciones recibidas y <%= hechas.length %> hechas. No se puede deshacer." data-escribir="<%= p.matricula %>" data-accion="Eliminar participante"><%- icono('basura', 16) %>Eliminar participante</button>
   <span class="muted small">Borra también todas sus evaluaciones hechas y recibidas.</span>

@@ -13,7 +13,7 @@
   </div>
   <div class="bloqueo-txt">
     <h2>Termina de evaluar para ver tu nota</h2>
-    <p class="ink-2">Tu resultado se desbloquea cuando evalúas al menos al <%= config.porcentajeParaVer %> % de tus compañeros. Llevas <strong><%= avance.hechas %> de <%= avance.requeridas %></strong>; te falta<%= avance.faltan === 1 ? '' : 'n' %> <strong><%= avance.faltan %></strong>.</p>
+    <p class="ink-2">Tu resultado se desbloquea cuando evalúas al menos al <%= config.porcentajeParaVer %> % de los compañeros que ya expusieron. Llevas <strong><%= avance.hechas %> de <%= avance.requeridas %></strong>; te falta<%= avance.faltan === 1 ? '' : 'n' %> <strong><%= avance.faltan %></strong>.</p>
     <div class="progreso-eval">
       <div class="minibar" style="flex:1; min-width:160px" role="img" aria-label="<%= pct %>% del mínimo"><span style="width: <%= Math.min(100, pct) %>%"></span></div>
       <span class="muted num"><%= avance.hechas %> de <%= avance.requeridas %></span>
@@ -49,6 +49,20 @@
     </div>
   </div>
   <div style="margin-top:12px"><%- include('partials/desglose', { desglose }) %></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Observaciones de tus compañeros</h2>
+      <p><%= comentarios.length ? 'Se muestran sin el nombre de quien las escribió.' : 'Nadie dejó observaciones todavía.' %></p>
+    </div>
+  </div>
+  <% if (comentarios.length) { %>
+    <ul class="observaciones-lista">
+      <% comentarios.forEach(c => { %><li><%= c %></li><% }) %>
+    </ul>
+  <% } else { %><div style="height:18px"></div><% } %>
 </section>
 <% } %>
 <%- include('partials/footer') %>

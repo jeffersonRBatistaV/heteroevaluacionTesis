@@ -7,6 +7,7 @@
 <footer class="pie">
   <div class="wrap">
     <span><%= usuario ? 'Apruebas con más de ' + usuario.umbral + ' puntos de 100 en ' + usuario.sesion_nombre + '.' : 'Cada sesión tiene su rúbrica y su umbral de aprobación.' %></span>
+    <% if (usuario && usuario.clave) { %><a href="/crear-clave" class="small">Cambiar mi contraseña</a><% } %>
   </div>
 </footer>
 <% } %>

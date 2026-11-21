@@ -131,6 +131,7 @@ function vistaSesion(req, res, s, extra = {}, status = 200) {
     ...base('sesiones'), s, importe,
     lista: q.resultados({ sesionId: s.id, orden: 'nombre' }).map((x) => ({ ...x, estado: estadoDe(x) })),
     criterios: q.criteriosActivos(s.rubrica_id), suma: q.sumaActivos(s.rubrica_id),
+    ronda: q.estadoRonda(s.id),
     error: null, origen: origen(req),
     ...extra,
   });
@@ -148,6 +149,7 @@ r.post('/sesion/:id', requiereAdmin, (req, res) => {
   const nombre = texto(req.body.nombre);
   if (!nombre || !esFecha(req.body.fecha)) return vistaSesion(req, res, s, { error: 'La sesión necesita un nombre y una fecha válidos.' }, 400);
   q.actualizarSesion(s.id, nombre, req.body.fecha, req.body.abierta === '1');
+  if (req.body.abierta !== '1') q.cerrarRonda(s.id);
   req.session.flash = 'Sesión actualizada.';
   res.redirect(`/admin/sesion/${s.id}`);
 });
@@ -156,6 +158,7 @@ r.post('/sesion/:id/estado', requiereAdmin, (req, res) => {
   const s = q.sesion(Number(req.params.id));
   if (s) {
     q.actualizarSesion(s.id, s.nombre, s.fecha, !s.abierta);
+    if (s.abierta) q.cerrarRonda(s.id);
     req.session.flash = s.abierta ? `"${s.nombre}" cerrada: ya no acepta registros ni evaluaciones.` : `"${s.nombre}" abierta.`;
   }
   res.redirect(req.body.volver === 'lista' ? '/admin/sesiones' : `/admin/sesion/${req.params.id}`);
@@ -177,6 +180,37 @@ r.post('/sesion/:id/enlace', requiereAdmin, (req, res) => {
     req.session.flash = 'Enlace nuevo generado. El anterior ya no funciona.';
   }
   res.redirect(`/admin/sesion/${req.params.id}#compartir`);
+});
+
+// ---------- Rondas: el profesor abre la evaluación de quien expone ----------
+r.post('/sesion/:id/ronda', requiereAdmin, (req, res) => {
+  const s = q.sesion(Number(req.params.id));
+  if (!s) return res.redirect('/admin/sesiones');
+  const p = q.participantePorId(Number(req.body.participante));
+  if (!s.abierta) req.session.flashError = 'La sesión está cerrada. Ábrela para iniciar una ronda.';
+  else if (!p || p.sesion_id !== s.id) req.session.flashError = 'Elige a quien expone.';
+  else {
+    q.abrirRonda(s.id, p.id);
+    req.session.flash = `Ronda abierta: los compañeros ya pueden evaluar a ${p.nombre}.`;
+  }
+  res.redirect(`/admin/sesion/${s.id}`);
+});
+
+r.post('/sesion/:id/ronda/cerrar', requiereAdmin, (req, res) => {
+  const s = q.sesion(Number(req.params.id));
+  if (!s) return res.redirect('/admin/sesiones');
+  const ronda = q.estadoRonda(s.id);
+  q.cerrarRonda(s.id);
+  if (ronda.expositor) req.session.flash = `Ronda de ${ronda.expositor.nombre} cerrada con ${ronda.recibidas} de ${ronda.esperadas} evaluaciones.`;
+  res.redirect(`/admin/sesion/${s.id}`);
+});
+
+// Avance de la ronda en vivo para el panel del profesor
+r.get('/sesion/:id/ronda.json', requiereAdmin, (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const ronda = q.estadoRonda(Number(req.params.id));
+  if (!ronda) return res.status(404).json({ error: 'sesión no encontrada' });
+  res.json({ expositorId: ronda.expositor ? ronda.expositor.id : null, recibidas: ronda.recibidas, esperadas: ronda.esperadas });
 });
 
 r.post('/sesion/:id/rubrica', requiereAdmin, (req, res) => {
@@ -262,6 +296,15 @@ r.post('/participante/:id/editar', requiereAdmin, (req, res) => {
     req.session.flash = 'Participante actualizado.';
   }
   res.redirect(String(req.body.volver || '').startsWith('/admin/') ? req.body.volver : `/admin/sesion/${p.sesion_id}#lista`);
+});
+
+// Olvidó su contraseña: vuelve a la inicial (su matrícula) y deberá crear una nueva al entrar
+r.post('/participante/:id/clave', requiereAdmin, (req, res) => {
+  const p = q.participantePorId(Number(req.params.id));
+  if (!p) return res.redirect('/admin/participantes');
+  q.guardarClaveParticipante(p.id, null);
+  req.session.flash = `Contraseña de ${p.nombre} restablecida: ahora entra con su matrícula (${p.matricula}) y crea una nueva.`;
+  res.redirect(String(req.body.volver || '').startsWith('/admin/') ? req.body.volver : `/admin/participante/${p.id}`);
 });
 
 r.get('/plantilla.xlsx', requiereAdmin, async (req, res) => {
@@ -378,9 +421,8 @@ r.post('/reiniciar-evaluaciones', requiereAdmin, (req, res) => {
   const f = { sesionId: Number(req.body.sesion) || null };
   const volver = '/admin/evaluaciones' + (f.sesionId ? `?sesion=${f.sesionId}` : '');
   if (!confirmado(req, 'BORRAR')) return res.redirect(volver);
-  if (f.sesionId) q.borrarEvaluaciones(f);
-  else db.exec('DELETE FROM evaluaciones');
-  req.session.flash = f.sesionId ? 'Se borraron las evaluaciones de la sesión.' : 'Se borraron todas las evaluaciones.';
+  q.borrarEvaluaciones(f);
+  req.session.flash = f.sesionId ? 'Se borraron las evaluaciones de la sesión y se reiniciaron sus rondas.' : 'Se borraron todas las evaluaciones y se reiniciaron las rondas.';
   res.redirect(volver);
 });
 

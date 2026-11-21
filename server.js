@@ -74,6 +74,8 @@ app.use(
     limit: Number(process.env.LIMITE_PETICIONES || 600), // por IP y minuto; un aula comparte IP
     standardHeaders: 'draft-7',
     legacyHeaders: false,
+    // Las consultas de estado en vivo (cada pocos segundos por estudiante) no cuentan: un aula entera comparte IP
+    skip: (req) => req.method === 'GET' && /^\/(estado\.json|admin\/sesion\/\d+\/ronda\.json)$/.test(req.path),
   })
 );
 

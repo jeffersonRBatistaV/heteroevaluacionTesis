@@ -13,13 +13,16 @@ function cifrar(clave) {
   return `scrypt$${sal.toString('hex')}$${h.toString('hex')}`;
 }
 
-function verificarClave(clave) {
-  const guardada = leer('admin_clave');
+// Compara una contraseña con un hash "scrypt$sal$hash"
+function coincide(clave, guardada) {
   if (!guardada) return false;
-  const [, salHex, hHex] = guardada.split('$');
+  const [, salHex, hHex] = String(guardada).split('$');
+  if (!salHex || !hHex) return false;
   const h = crypto.scryptSync(String(clave || ''), Buffer.from(salHex, 'hex'), 64);
   return crypto.timingSafeEqual(h, Buffer.from(hHex, 'hex'));
 }
+
+const verificarClave = (clave) => coincide(clave, leer('admin_clave'));
 
 // Cada cambio de contraseña sube la versión: las sesiones de admin con una versión anterior se cierran.
 const versionClave = () => Number(leer('admin_version') || 1);
@@ -34,4 +37,4 @@ if (!leer('admin_clave')) {
   escribir('admin_version', 1);
 }
 
-module.exports = { verificarClave, cambiarClave, versionClave };
+module.exports = { verificarClave, cambiarClave, versionClave, cifrar, coincide };
