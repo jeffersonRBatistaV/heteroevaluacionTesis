@@ -1,7 +1,7 @@
 const express = require('express');
 const { db, q } = require('../db');
 const { generarExcel } = require('../excel');
-const { verificarClave, cambiarClave, versionClave } = require('../auth');
+const { verificarClave, cambiarClave, versionClave, correoAdmin, cambiarCorreo, normalizarCorreo } = require('../auth');
 const multer = require('multer');
 const { ESCALA, redondear } = require('../escala');
 const { leerLista, plantilla, limpiarNombre, limpiarMatricula, matriculaValida } = require('../importar');
@@ -430,13 +430,26 @@ r.post('/reiniciar-evaluaciones', requiereAdmin, (req, res) => {
 });
 
 // ---------- Configuración ----------
-r.get('/configuracion', requiereAdmin, (req, res) => {
-  res.render('admin/configuracion', { ...base('configuracion'), error: null });
+// error: del panel de contraseña; errorCorreo: del panel de correo
+const vistaConfig = (res, extra = {}, status = 200) =>
+  res.status(status).render('admin/configuracion', { ...base('configuracion'), error: null, errorCorreo: null, correo: correoAdmin(), ...extra });
+
+r.get('/configuracion', requiereAdmin, (req, res) => vistaConfig(res));
+
+r.post('/configuracion/correo', requiereAdmin, (req, res) => {
+  const nuevo = normalizarCorreo(req.body.correo);
+  const fallo = (errorCorreo) => vistaConfig(res, { errorCorreo }, 400);
+  if (!verificarClave(req.body.actual)) return fallo('La contraseña actual no es correcta.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevo)) return fallo('Escribe un correo válido, por ejemplo nombre@unapec.edu.do.');
+  if (nuevo === correoAdmin()) return fallo('Ese ya es el correo del administrador.');
+  cambiarCorreo(nuevo);
+  req.session.flash = `Correo actualizado. Desde ahora entras con ${nuevo}.`;
+  res.redirect('/admin/configuracion');
 });
 
 r.post('/configuracion/clave', requiereAdmin, (req, res) => {
   const { actual, nueva, repetir } = req.body;
-  const fallo = (error) => res.status(400).render('admin/configuracion', { ...base('configuracion'), error });
+  const fallo = (error) => vistaConfig(res, { error }, 400);
   if (!verificarClave(actual)) return fallo('La contraseña actual no es correcta.');
   if (String(nueva || '').length < 8) return fallo('La nueva contraseña debe tener al menos 8 caracteres.');
   if (nueva !== repetir) return fallo('La nueva contraseña y su repetición no coinciden.');

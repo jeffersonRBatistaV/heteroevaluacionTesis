@@ -125,7 +125,7 @@
   // Pantalla de ingreso: Estudiante (Entrar / Registrarme) o Administrador
   const ingreso = document.getElementById('ingreso');
   if (ingreso) {
-    const FOCO = { estudiante: '#matricula', registro: '#r-matricula', admin: '#clave' };
+    const FOCO = { estudiante: '#matricula', registro: '#r-matricula', admin: '#correo-admin' };
     ingreso.querySelectorAll('[data-modo]').forEach((b) =>
       b.addEventListener('click', () => {
         const modo = b.dataset.modo;

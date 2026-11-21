@@ -3,8 +3,30 @@
 
 <section class="panel panel-pad" style="display:grid; gap:16px; max-width:560px">
   <div>
+    <h2>Correo del administrador</h2>
+    <p class="muted small">Entras al panel con este correo y tu contraseña. Ahora es <strong><%= correo %></strong>.</p>
+  </div>
+  <% if (errorCorreo) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= errorCorreo %></span></div><% } %>
+  <form method="post" action="/admin/configuracion/correo" id="form-correo" style="display:grid; gap:14px">
+    <div class="campo">
+      <label for="c-correo">Nuevo correo</label>
+      <input id="c-correo" name="correo" type="email" maxlength="120" required autocomplete="email" spellcheck="false" placeholder="nombre@unapec.edu.do">
+    </div>
+    <div class="campo">
+      <label for="c-actual-correo">Contraseña actual</label>
+      <input id="c-actual-correo" name="actual" type="password" autocomplete="current-password" required>
+      <span class="ayuda">Para confirmar que eres tú.</span>
+    </div>
+    <div class="acciones">
+      <button class="btn">Cambiar correo</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel panel-pad" style="display:grid; gap:16px; max-width:560px">
+  <div>
     <h2>Contraseña del administrador</h2>
-    <p class="muted small">Es la contraseña del ingreso "Administrador". Usa al menos 8 caracteres y evita contraseñas fáciles de adivinar.</p>
+    <p class="muted small">Es la contraseña con la que entras junto con tu correo. Usa al menos 8 caracteres y evita contraseñas fáciles de adivinar.</p>
   </div>
   <% if (error) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></div><% } %>
   <form method="post" action="/admin/configuracion/clave" id="form-clave" style="display:grid; gap:14px">

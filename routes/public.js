@@ -1,7 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { q } = require('../db');
-const { verificarClave, versionClave, cifrar, coincide } = require('../auth');
+const { verificarAdmin, normalizarCorreo, versionClave, cifrar, coincide } = require('../auth');
 
 const r = express.Router();
 
@@ -24,7 +24,7 @@ const normalizar = (s) => limpiarNombre(s).normalize('NFD').replace(/[̀-ͯ]/g, 
 function pantallaIngreso(res, extra = {}, status = 200) {
   res.status(status).render('inicio', {
     modo: 'estudiante', error: null, errorRegistro: null, errorAdmin: null,
-    matricula: '', nombre: '', fija: null,
+    matricula: '', nombre: '', correoAdmin: '', fija: null,
     ...extra,
   });
 }
@@ -143,15 +143,31 @@ r.post('/crear-clave', (req, res) => {
   res.redirect('/participantes');
 });
 
-// Ingreso del administrador desde la misma pantalla
-r.post('/entrar-admin', (req, res) => {
-  if (verificarClave(req.body.clave)) {
+// Ingreso del administrador: correo y contraseña. Intentos fallidos limitados por correo.
+const limiteAdmin = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: (req) => `admin|${normalizarCorreo(req.body.correo)}`,
+  handler: (req, res) => pantallaIngreso(res, {
+    modo: 'admin', correoAdmin: normalizarCorreo(req.body.correo),
+    errorAdmin: 'Demasiados intentos fallidos con este correo. Espera 15 minutos y vuelve a intentarlo.',
+  }, 429),
+});
+
+r.post('/entrar-admin', limiteAdmin, (req, res) => {
+  if (verificarAdmin(req.body.correo, req.body.clave)) {
     req.session.admin = true;
     req.session.adminVer = versionClave();
     req.session.participanteId = null;
     return res.redirect('/admin');
   }
-  pantallaIngreso(res, { modo: 'admin', errorAdmin: 'La contraseña no es correcta. Revisa mayúsculas y vuelve a intentarlo.' }, 401);
+  pantallaIngreso(res, {
+    modo: 'admin', correoAdmin: normalizarCorreo(req.body.correo),
+    errorAdmin: 'El correo o la contraseña no son correctos.',
+  }, 401);
 });
 
 // Marca el tutorial como visto (estudiante o profesor) para no volver a abrirlo solo

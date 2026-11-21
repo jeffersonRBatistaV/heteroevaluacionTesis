@@ -89,6 +89,7 @@
     },
     'admin-configuracion': {
       pasos: [
+        paso('#form-correo', 'Correo del administrador', 'Es el correo con el que entras al panel. Para cambiarlo confirma tu contraseña actual.'),
         paso('#c-actual', 'Contraseña actual', 'Para cambiar la contraseña primero confirma la actual.'),
         paso('#c-nueva', 'Nueva contraseña', 'Mínimo 8 caracteres. Repítela en el campo de abajo.'),
         paso('#form-clave .btn', 'Guardar', 'Al guardar, cualquier otra sesión de administrador abierta se cierra.', 'top'),

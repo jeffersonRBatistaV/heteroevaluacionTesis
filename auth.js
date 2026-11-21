@@ -1,5 +1,5 @@
-// Contraseña del administrador: se guarda cifrada (scrypt + sal) en la tabla `config`.
-// La primera vez se toma de ADMIN_PASSWORD en .env (o "cambia-esta-clave"). Desde ahí se cambia en Configuración.
+// Administrador: entra con correo y contraseña. La contraseña se guarda cifrada (scrypt + sal) en la tabla `config`.
+// La primera vez se toman de ADMIN_EMAIL y ADMIN_PASSWORD en .env. Desde ahí se cambian en Configuración.
 const crypto = require('crypto');
 const { db } = require('./db');
 
@@ -24,6 +24,16 @@ function coincide(clave, guardada) {
 
 const verificarClave = (clave) => coincide(clave, leer('admin_clave'));
 
+// Correo del administrador: se entra con correo y contraseña. No distingue mayúsculas ni espacios.
+const normalizarCorreo = (s) => String(s || '').trim().toLowerCase().slice(0, 120);
+const correoAdmin = () => leer('admin_correo') || '';
+// La contraseña se compara siempre (aunque el correo no coincida) para no revelar por el tiempo cuál falló
+function verificarAdmin(correo, clave) {
+  const claveOk = verificarClave(clave);
+  return claveOk && normalizarCorreo(correo) === correoAdmin();
+}
+const cambiarCorreo = (nuevo) => escribir('admin_correo', normalizarCorreo(nuevo));
+
 // Cada cambio de contraseña sube la versión: las sesiones de admin con una versión anterior se cierran.
 const versionClave = () => Number(leer('admin_version') || 1);
 
@@ -36,5 +46,8 @@ if (!leer('admin_clave')) {
   escribir('admin_clave', cifrar(process.env.ADMIN_PASSWORD || 'cambia-esta-clave'));
   escribir('admin_version', 1);
 }
+if (!leer('admin_correo')) {
+  escribir('admin_correo', normalizarCorreo(process.env.ADMIN_EMAIL || 'admin@example.com'));
+}
 
-module.exports = { verificarClave, cambiarClave, versionClave, cifrar, coincide };
+module.exports = { verificarClave, verificarAdmin, correoAdmin, cambiarCorreo, normalizarCorreo, cambiarClave, versionClave, cifrar, coincide };

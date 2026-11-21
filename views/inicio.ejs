@@ -82,10 +82,14 @@
     <form method="post" action="/entrar-admin" class="ingreso-form" data-panel="admin" <%= modo === 'admin' ? '' : 'hidden' %>>
       <div>
         <h2>Entrar como administrador</h2>
-        <p class="sub">Gestiona sesiones, rúbricas y resultados.</p>
+        <p class="sub">Con tu correo y tu contraseña de administrador.</p>
       </div>
       <div class="campo">
-        <label for="clave">Contraseña de administrador</label>
+        <label for="correo-admin">Correo</label>
+        <input id="correo-admin" name="correo" type="email" value="<%= correoAdmin %>" maxlength="120" required autocomplete="username" spellcheck="false" placeholder="nombre@unapec.edu.do">
+      </div>
+      <div class="campo">
+        <label for="clave">Contraseña</label>
         <input id="clave" name="clave" type="password" autocomplete="current-password" required>
       </div>
       <% if (errorAdmin) { %><p class="error" role="alert"><%- icono('alerta', 16) %><span><%= errorAdmin %></span></p><% } %>
