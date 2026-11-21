@@ -3,6 +3,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { DatabaseSync } = require('node:sqlite');
 const { ESCALA, REPARTO, puntosDe, redondear } = require('./escala');
+const { RUBRICA_UNAPEC, NOMBRES_EJEMPLO } = require('./rubrica-unapec');
 
 const dataDir = path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
@@ -199,18 +200,37 @@ if (!columnas('evaluaciones').includes('comentario')) db.exec("ALTER TABLE evalu
 // v11: acceso con matrícula y contraseña. Sin clave propia (null), la contraseña inicial es la matrícula
 // y el estudiante debe crear la suya al entrar por primera vez.
 if (!columnas('participantes').includes('clave')) db.exec('ALTER TABLE participantes ADD COLUMN clave TEXT');
+// v12: descriptor de cada nivel en cada criterio (d1 = No aceptable … d5 = Excelente)
+for (const k of ['d1', 'd2', 'd3', 'd4', 'd5']) {
+  if (!columnas('criterios').includes(k)) db.exec(`ALTER TABLE criterios ADD COLUMN ${k} TEXT NOT NULL DEFAULT ''`);
+}
 
 // ---------- Datos iniciales ----------
+// Carga la rúbrica UNAPEC en una rúbrica (reemplaza sus criterios). Puntos de cada nivel = peso × nivel / 4.
+function cargarRubricaUnapec(rubricaId) {
+  db.exec('BEGIN');
+  try {
+    db.prepare('DELETE FROM criterios WHERE rubrica_id = ?').run(rubricaId);
+    const ins = db.prepare(
+      `INSERT INTO criterios (rubrica_id, nombre, descripcion, puntos, p1, p2, p3, p4, p5, d1, d2, d3, d4, d5, orden, activo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`
+    );
+    RUBRICA_UNAPEC.forEach((c, i) => {
+      const pts = REPARTO.map((f) => redondear(c.peso * f));
+      ins.run(rubricaId, c.nombre, c.descripcion, c.peso, ...pts, ...c.d, i + 1);
+    });
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+}
 const RG = rubricaGeneralId();
-if (db.prepare('SELECT COUNT(*) AS n FROM criterios WHERE rubrica_id = ?').get(RG).n === 0) {
-  const ins = db.prepare('INSERT INTO criterios (rubrica_id, nombre, descripcion, puntos, orden, p1, p2, p3, p4, p5) VALUES (?, ?, ?, ?, ?, 4, 8, 12, 16, 20)');
-  [
-    ['Planteamiento del problema', 'Presenta el problema de investigación con claridad y lo delimita.'],
-    ['Justificación y objetivos', 'Explica la relevancia del trabajo y define objetivos medibles.'],
-    ['Metodología', 'Describe un método coherente con los objetivos planteados.'],
-    ['Resultados y conclusiones', 'Expone resultados y conclusiones sustentadas en los datos.'],
-    ['Comunicación', 'Demuestra dominio del tema y responde preguntas con seguridad.'],
-  ].forEach(([n, d], i) => ins.run(RG, n, d, 20, i + 1));
+{
+  // La general pasa a la UNAPEC si está vacía o sigue siendo la de ejemplo; si el profesor la editó, no se toca
+  const nombres = db.prepare('SELECT nombre FROM criterios WHERE rubrica_id = ? ORDER BY orden, id').all(RG).map((c) => c.nombre);
+  const esEjemplo = nombres.length === NOMBRES_EJEMPLO.length && nombres.every((n, i) => n === NOMBRES_EJEMPLO[i]);
+  if (!nombres.length || esEjemplo) cargarRubricaUnapec(RG);
 }
 if (db.prepare('SELECT COUNT(*) AS n FROM sesiones').get().n === 0) {
   db.prepare('INSERT INTO sesiones (nombre, fecha, rubrica_id) VALUES (?, ?, ?)').run('Sesión 1', hoy(), RG);
@@ -299,8 +319,8 @@ const q = {
     tx(() => {
       const id = Number(db.prepare('INSERT INTO rubricas (nombre, general) VALUES (?, 0)').run(nombre).lastInsertRowid);
       db.prepare(
-        `INSERT INTO criterios (rubrica_id, nombre, descripcion, puntos, p1, p2, p3, p4, p5, orden, activo)
-         SELECT ?, nombre, descripcion, puntos, p1, p2, p3, p4, p5, orden, activo FROM criterios WHERE rubrica_id = ?`
+        `INSERT INTO criterios (rubrica_id, nombre, descripcion, puntos, p1, p2, p3, p4, p5, d1, d2, d3, d4, d5, orden, activo)
+         SELECT ?, nombre, descripcion, puntos, p1, p2, p3, p4, p5, d1, d2, d3, d4, d5, orden, activo FROM criterios WHERE rubrica_id = ?`
       ).run(id, origenId);
       return id;
     }),
@@ -317,13 +337,14 @@ const q = {
   sumaActivos: (rubricaId) => db.prepare('SELECT COALESCE(SUM(puntos),0) AS s FROM criterios WHERE rubrica_id = ? AND activo = 1').get(rubricaId).s,
   guardarRubrica: (rubricaId, filas) =>
     tx(() => {
-      const upd = db.prepare('UPDATE criterios SET nombre = ?, descripcion = ?, puntos = ?, p1 = ?, p2 = ?, p3 = ?, p4 = ?, p5 = ?, orden = ?, activo = ? WHERE id = ? AND rubrica_id = ?');
-      const ins = db.prepare('INSERT INTO criterios (rubrica_id, nombre, descripcion, puntos, p1, p2, p3, p4, p5, orden, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      const upd = db.prepare('UPDATE criterios SET nombre = ?, descripcion = ?, puntos = ?, p1 = ?, p2 = ?, p3 = ?, p4 = ?, p5 = ?, d1 = ?, d2 = ?, d3 = ?, d4 = ?, d5 = ?, orden = ?, activo = ? WHERE id = ? AND rubrica_id = ?');
+      const ins = db.prepare('INSERT INTO criterios (rubrica_id, nombre, descripcion, puntos, p1, p2, p3, p4, p5, d1, d2, d3, d4, d5, orden, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       for (const f of filas) {
         const a = f.activo ? 1 : 0;
         const [p1, p2, p3, p4, p5] = f.pts;
-        if (f.id) upd.run(f.nombre, f.descripcion, p5, p1, p2, p3, p4, p5, f.orden, a, f.id, rubricaId);
-        else ins.run(rubricaId, f.nombre, f.descripcion, p5, p1, p2, p3, p4, p5, f.orden, a);
+        const desc = (f.desc || []).concat(['', '', '', '', '']).slice(0, 5);
+        if (f.id) upd.run(f.nombre, f.descripcion, p5, p1, p2, p3, p4, p5, ...desc, f.orden, a, f.id, rubricaId);
+        else ins.run(rubricaId, f.nombre, f.descripcion, p5, p1, p2, p3, p4, p5, ...desc, f.orden, a);
       }
     }),
   criterio: (id) => db.prepare('SELECT * FROM criterios WHERE id = ?').get(id),

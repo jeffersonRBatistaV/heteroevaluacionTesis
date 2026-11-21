@@ -1,7 +1,7 @@
 const ExcelJS = require('exceljs');
 const { q } = require('./db');
 const { ESCALA } = require('./escala');
-// Relleno de celda por opción, de Deficiente (rojo claro) a Excelente (verde claro)
+// Relleno de celda por opción, de No aceptable (rojo claro) a Excelente (verde claro)
 const TONO = ['FFFBE3E3', 'FFFCEEDC', 'FFF6F3D9', 'FFE6F2E3', 'FFD8EFD8'];
 
 const AZUL = 'FF2357C6';
@@ -185,11 +185,15 @@ async function generarExcel({ nota, min }, estadoDe, f) {
     ws4.columns = [
       { header: 'Orden', key: 'o', width: 8 },
       { header: 'Criterio', key: 'n', width: 32 },
-      { header: 'Descripción', key: 'd', width: 70 },
-      ...ESCALA.map((t, i) => ({ header: t, key: 'p' + (i + 1), width: 12 })),
+      { header: 'Descripción', key: 'd', width: 40 },
+      ...ESCALA.map((t, i) => ({ header: `${t} (${i}) pts`, key: 'p' + (i + 1), width: 12 })),
       { header: 'Activo', key: 'a', width: 9 },
+      ...ESCALA.map((t, i) => ({ header: `${t} (${i}): descriptor`, key: 'ds' + (i + 1), width: 45 })),
     ];
-    q.todosCriterios(rubricaId).forEach((c) => ws4.addRow({ o: c.orden, n: c.nombre, d: c.descripcion, p1: c.p1, p2: c.p2, p3: c.p3, p4: c.p4, p5: c.p5, a: c.activo ? 'Sí' : 'No' }));
+    q.todosCriterios(rubricaId).forEach((c) => ws4.addRow({
+      o: c.orden, n: c.nombre, d: c.descripcion, p1: c.p1, p2: c.p2, p3: c.p3, p4: c.p4, p5: c.p5, a: c.activo ? 'Sí' : 'No',
+      ds1: c.d1, ds2: c.d2, ds3: c.d3, ds4: c.d4, ds5: c.d5,
+    }));
     encabezado(ws4);
     bordes(ws4);
   }

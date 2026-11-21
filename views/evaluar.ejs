@@ -11,8 +11,8 @@
   </div>
 </div>
 <div style="display:grid; gap:6px; margin-top:-6px">
-  <p class="ink-2">Elige en cada criterio la opción que mejor describe la defensa de <strong><%= evaluado.nombre %></strong>, de <%= escala[0] %> a <%= escala[4] %>. Hay que calificar todos.</p>
-  <% if (!bloqueada) { %><p class="atajos">Con teclado: pulsa <kbd>1</kbd> a <kbd>5</kbd> para calificar y pasar al siguiente criterio.</p><% } %>
+  <p class="ink-2">Elige en cada criterio el nivel que mejor describe el trabajo de <strong><%= evaluado.nombre %></strong>, de <%= escala[0] %> (0) a <%= escala[4] %> (4). Hay que calificar todos.</p>
+  <% if (!bloqueada) { %><p class="atajos">Con teclado: pulsa <kbd>0</kbd> a <kbd>4</kbd> para calificar y pasar al siguiente criterio.</p><% } %>
 </div>
 
 <% if (cerrada) { %><div class="flash err" role="status"><%- icono('reloj', 16) %><span>La sesión está cerrada. Esta evaluación ya no se puede modificar.</span></div><% } %>
@@ -21,7 +21,7 @@
 <form method="post" action="/evaluar/<%= evaluado.id %>" id="form-eval" style="display:grid; gap:16px">
   <fieldset <%= bloqueada ? 'disabled' : '' %> style="border:0; padding:0; margin:0; min-width:0">
   <ul class="rubrica">
-    <% criterios.forEach(c => { const pts = [c.p1, c.p2, c.p3, c.p4, c.p5]; %>
+    <% criterios.forEach(c => { const pts = [c.p1, c.p2, c.p3, c.p4, c.p5]; const ds = [c.d1, c.d2, c.d3, c.d4, c.d5]; const conDesc = ds.some(Boolean); %>
       <li>
         <fieldset class="panel crit-escala" data-criterio="<%= c.id %>">
           <legend class="sr-only"><%= c.nombre %></legend>
@@ -32,12 +32,13 @@
             </div>
             <span class="pts" data-obtenido><%= selecciones[c.id] ? pts[selecciones[c.id] - 1] : '—' %> / <%= c.p5 %> pts</span>
           </div>
-          <div class="opciones" role="radiogroup" aria-label="<%= c.nombre %>">
+          <div class="opciones <%= conDesc ? 'con-desc' : '' %>" role="radiogroup" aria-label="<%= c.nombre %>">
             <% escala.forEach((palabra, i) => { %>
               <label class="opcion o<%= i + 1 %>">
                 <input type="radio" name="c_<%= c.id %>" value="<%= i + 1 %>" data-p="<%= pts[i] %>" required <%= selecciones[c.id] === i + 1 ? 'checked' : '' %>>
-                <span class="opcion-txt"><%= palabra %></span>
+                <span class="opcion-txt"><%= palabra %> (<%= i %>)</span>
                 <span class="opcion-pts"><%= pts[i] %> pts</span>
+                <% if (ds[i]) { %><span class="opcion-desc"><%= ds[i] %></span><% } %>
               </label>
             <% }) %>
           </div>

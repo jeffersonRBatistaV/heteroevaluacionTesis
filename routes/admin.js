@@ -341,6 +341,8 @@ r.post('/rubrica/:id', requiereAdmin, (req, res) => {
   const arr = (k) => [].concat(b[k] ?? []);
   const ids = arr('id'), noms = arr('nombre'), descs = arr('descripcion'), ords = arr('orden'), keys = arr('key');
   const opc = [1, 2, 3, 4, 5].map((k) => arr('p' + k));
+  const descs5 = [1, 2, 3, 4, 5].map((k) => arr('d' + k)); // descriptor de cada nivel
+  const descriptor = (v) => String(v ?? '').replace(/\r\n/g, '\n').trim().slice(0, 1000);
   const activos = new Set(arr('activo').map(String));
   const filas = [];
   for (let i = 0; i < noms.length; i++) {
@@ -348,7 +350,8 @@ r.post('/rubrica/:id', requiereAdmin, (req, res) => {
     const descripcion = String(descs[i] || '').replace(/\r\n/g, '\n').trim().slice(0, 2000);
     if (!nombre && !descripcion && !ids[i]) continue;
     const pts = opc.map((col) => redondear(Number(String(col[i] ?? '').replace(',', '.'))));
-    filas.push({ id: ids[i] ? Number(ids[i]) : null, nombre, descripcion, pts, p1: pts[0], p2: pts[1], p3: pts[2], p4: pts[3], p5: pts[4], puntos: pts[4], orden: Number(ords[i]) || i + 1, activo: activos.has(String(keys[i] ?? ids[i])) });
+    const desc = descs5.map((col) => descriptor(col[i]));
+    filas.push({ id: ids[i] ? Number(ids[i]) : null, nombre, descripcion, pts, p1: pts[0], p2: pts[1], p3: pts[2], p4: pts[3], p5: pts[4], desc, d1: desc[0], d2: desc[1], d3: desc[2], d4: desc[3], d5: desc[4], puntos: pts[4], orden: Number(ords[i]) || i + 1, activo: activos.has(String(keys[i] ?? ids[i])) });
   }
   const errores = [];
   if (filas.some((f) => !f.nombre)) errores.push('Todos los criterios necesitan nombre.');

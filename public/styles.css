@@ -455,7 +455,8 @@ fieldset[disabled] .opcion { cursor: default; opacity: .75; }
 .crit-card-cab { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; }
 .crit-card-cab input[name=nombre] { font-weight: 700; }
 .crit-card-cab input.mini { width: 4.5rem !important; }
-.puntos-opciones { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) auto; gap: 8px; align-items: end; }
+.puntos-opciones { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: start; }
+@media (max-width: 1000px) { .puntos-opciones { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .punto-opcion { display: grid; gap: 4px; font-size: .84rem; font-weight: 700; color: var(--tinta-2); }
 .punto-opcion input { text-align: center; }
 .crit-card.desordenado .punto-opcion input { border-color: var(--mal); }
@@ -527,6 +528,19 @@ fieldset[disabled] .opcion { cursor: default; opacity: .75; }
 .siguiente.espera p { color: var(--tinta-2); }
 .persona-card.en-ronda { box-shadow: inset 3px 0 0 var(--tinta); }
 
+/* ---------- Descriptores de nivel (rúbrica UNAPEC) ---------- */
+.opcion-desc { font-size: .8rem; line-height: 1.4; color: var(--tinta-2); text-align: left; margin-top: 6px; }
+.opcion:has(input:checked) .opcion-desc { color: color-mix(in srgb, var(--accion-txt) 85%, transparent); }
+.opciones.con-desc .opcion { align-content: start; justify-items: start; text-align: left; padding: 12px 12px 14px; }
+@media (max-width: 1000px) {
+  .opciones.con-desc { grid-template-columns: minmax(0, 1fr); }
+  .opciones.con-desc .opcion { grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; }
+  .opciones.con-desc .opcion-desc { grid-column: 1 / -1; margin-top: 2px; }
+}
+.puntos-opciones .nivel-edit { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.puntos-opciones .nivel-edit textarea { font-size: .84rem; min-height: 5.5rem; }
+.puntos-opciones [data-repartir] { grid-column: 1 / -1; justify-self: start; }
+
 /* ---------- Observaciones ---------- */
 .observaciones label { font-size: 1rem; }
 .obs-txt { margin-top: 6px !important; color: var(--tinta-2); white-space: pre-line; }
@@ -581,7 +595,7 @@ fieldset[disabled] .opcion { cursor: default; opacity: .75; }
   .chart-box { padding: 6px 18px 18px; }
   .entrar { padding: 22px; }
   .crit-card-cab { grid-template-columns: auto minmax(0, 1fr); }
-  .puntos-opciones { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .puntos-opciones { grid-template-columns: minmax(0, 1fr); }
   .prep { grid-template-columns: minmax(0, 1fr); }
   .prep li { border-left: 0 !important; border-top: 1px solid var(--linea); }
   .prep li:first-child { border-top: 0; }

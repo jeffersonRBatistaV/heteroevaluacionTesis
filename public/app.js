@@ -34,17 +34,18 @@
     if (visto) sello.classList.remove('estampar');
   }
 
-  // Evaluar con el teclado: 1 a 5 elige Deficiente…Excelente en el criterio actual y pasa al siguiente
+  // Evaluar con el teclado: 0 a 4 elige No aceptable…Excelente en el criterio actual y pasa al siguiente
+  // (la opción interna es nivel + 1)
   const formEval = document.getElementById('form-eval');
   if (formEval && !formEval.querySelector('fieldset[disabled]')) {
     const criterios = [...formEval.querySelectorAll('.crit-escala')];
     document.addEventListener('keydown', (ev) => {
-      if (ev.ctrlKey || ev.metaKey || ev.altKey || !/^[1-5]$/.test(ev.key)) return;
+      if (ev.ctrlKey || ev.metaKey || ev.altKey || !/^[0-4]$/.test(ev.key)) return;
       if (ev.target.matches('input:not([type=radio]), textarea, select')) return;
       const actual = criterios.find((c) => c.contains(document.activeElement)) || criterios.find((c) => !c.querySelector('input:checked')) || criterios[0];
       if (!actual) return;
       ev.preventDefault();
-      const radio = actual.querySelector(`input[value="${ev.key}"]`);
+      const radio = actual.querySelector(`input[value="${Number(ev.key) + 1}"]`);
       radio.checked = true;
       radio.dispatchEvent(new Event('change', { bubbles: true }));
       const sig = criterios[criterios.indexOf(actual) + 1];
@@ -233,7 +234,7 @@
       if (rep) {
         const card = rep.closest('.crit-card');
         const max = Number(card.querySelector('input[name=p5]').value || 0);
-        [0.2, 0.4, 0.6, 0.8].forEach((f, k) => (card.querySelector('input[name=p' + (k + 1) + ']').value = Math.round(max * f * 100) / 100));
+        [0, 0.25, 0.5, 0.75].forEach((f, k) => (card.querySelector('input[name=p' + (k + 1) + ']').value = Math.round(max * f * 100) / 100));
         recalcular();
       }
     });

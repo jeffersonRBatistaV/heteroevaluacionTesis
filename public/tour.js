@@ -29,7 +29,7 @@
     },
     evaluar: {
       pasos: [
-        paso('.rubrica li:first-child .crit-escala', 'Califica cada criterio', 'Elige la opción que mejor describe el desempeño de tu compañero en este criterio, de Deficiente a Excelente. Cada opción muestra los puntos que da.'),
+        paso('.rubrica li:first-child .crit-escala', 'Califica cada criterio', 'Elige la opción que mejor describe el desempeño de tu compañero en este criterio, de No aceptable (0) a Excelente (4). Cada nivel muestra los puntos que da y qué describe.'),
         paso('.rubrica li:first-child .pts', 'Puntos del criterio', 'Los puntos que obtiene con la opción elegida, sobre el máximo del criterio.', 'left'),
         paso('.barra-eval .total', 'Puntaje en vivo', 'El total se actualiza mientras marcas.', 'top'),
         paso('#regla-eval', 'El umbral de aprobación', 'La marca vertical es la nota de aprobación. La nota final de tu compañero es el promedio de todas las evaluaciones que recibe.', 'top'),

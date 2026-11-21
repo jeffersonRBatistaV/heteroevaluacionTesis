@@ -200,7 +200,7 @@ r.post('/evaluar/:id', requiereUsuario, (req, res) => {
     req.session.flashError = `La ronda de ${evaluado.nombre} se cerró antes de que enviaras la evaluación. No se guardó.`;
     return res.redirect('/participantes');
   }
-  // Cada criterio llega como c_<id> = opción elegida (1 = Deficiente … 5 = Excelente)
+  // Cada criterio llega como c_<id> = opción elegida (1 = No aceptable … 5 = Excelente; nivel 0 a 4)
   const selecciones = {};
   for (const [k, v] of Object.entries(req.body)) if (/^c_\d+$/.test(k)) selecciones[k.slice(2)] = Number(v);
   const total = q.guardarEvaluacion(req.usuario.id, evaluado.id, req.usuario.rubrica_id, selecciones, limpiarComentario(req.body.comentario));

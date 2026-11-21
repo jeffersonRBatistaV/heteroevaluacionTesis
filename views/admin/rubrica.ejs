@@ -6,12 +6,12 @@
   <span class="muted small"><%= usadaPor.length ? 'La usa' + (usadaPor.length === 1 ? ' la sesión ' : 'n ' + usadaPor.length + ' sesiones: ') + usadaPor.map(s => s.nombre).join(', ') : 'Ninguna sesión la usa todavía' %></span>
 </div>
 
-<p class="ink-2" style="max-width:74ch">Cada criterio se califica con una de cinco opciones: <%= escala.join(' · ') %>. Tú decides cuántos puntos da cada opción en cada criterio, de menor a mayor. Con "<%= escala[4] %>" en todos los criterios activos se deben obtener exactamente 100 puntos. Desactiva un criterio para ocultarlo sin perder su historial.</p>
+<p class="ink-2" style="max-width:74ch">Cada criterio se califica con uno de cinco niveles: <%= escala.map((t, k) => t + ' (' + k + ')').join(' · ') %>. Tú decides cuántos puntos da cada nivel y qué describe, de menor a mayor. Con "<%= escala[4] %>" en todos los criterios activos se deben obtener exactamente 100 puntos. Desactiva un criterio para ocultarlo sin perder su historial.</p>
 <% if (error) { %><div class="flash err" role="alert"><%- icono('alerta', 16) %><span><%= error %></span></div><% } %>
 
 <form method="post" action="/admin/rubrica/<%= rub.id %>" id="form-rubrica" style="display:grid; gap:14px">
   <div id="filas-rubrica" class="crit-lista">
-    <% criterios.forEach((c, i) => { const key = c._key || c.id; const pts = [c.p1, c.p2, c.p3, c.p4, c.p5]; %>
+    <% criterios.forEach((c, i) => { const key = c._key || c.id; const pts = [c.p1, c.p2, c.p3, c.p4, c.p5]; const ds = [c.d1, c.d2, c.d3, c.d4, c.d5]; %>
       <div class="panel crit-card">
         <input type="hidden" name="id" value="<%= c.id %>">
         <input type="hidden" name="key" value="<%= key %>">
@@ -24,9 +24,12 @@
         <textarea name="descripcion" rows="2" maxlength="2000" placeholder="Descripción: qué debe cumplir el evaluado" aria-label="Descripción"><%= c.descripcion %></textarea>
         <div class="puntos-opciones">
           <% escala.forEach((palabra, k) => { %>
-            <label class="punto-opcion"><span><%= palabra %></span><input class="mono-in" name="p<%= k + 1 %>" type="number" step="0.01" min="0" value="<%= pts[k] ?? '' %>" required aria-label="Puntos de <%= palabra %>"></label>
+            <div class="nivel-edit">
+              <label class="punto-opcion"><span><%= palabra %> (<%= k %>)</span><input class="mono-in" name="p<%= k + 1 %>" type="number" step="0.01" min="0" value="<%= pts[k] ?? '' %>" required aria-label="Puntos de <%= palabra %>"></label>
+              <textarea name="d<%= k + 1 %>" rows="4" maxlength="1000" placeholder="Qué describe este nivel (opcional)" aria-label="Descriptor de <%= palabra %>"><%= ds[k] || '' %></textarea>
+            </div>
           <% }) %>
-          <button type="button" class="link" data-repartir title="Reparte 20 %, 40 %, 60 % y 80 % del puntaje de <%= escala[4] %>">Repartir desde <%= escala[4] %></button>
+          <button type="button" class="link" data-repartir title="Pone 0 %, 25 %, 50 % y 75 % del puntaje de <%= escala[4] %> en los demás niveles">Repartir desde <%= escala[4] %></button>
         </div>
       </div>
     <% }) %>
@@ -56,7 +59,10 @@
     <textarea name="descripcion" rows="2" maxlength="2000" placeholder="Descripción: qué debe cumplir el evaluado" aria-label="Descripción"></textarea>
     <div class="puntos-opciones">
       <% escala.forEach((palabra, k) => { %>
-        <label class="punto-opcion"><span><%= palabra %></span><input class="mono-in" name="p<%= k + 1 %>" type="number" step="0.01" min="0" value="<%= [2, 4, 6, 8, 10][k] %>" required aria-label="Puntos de <%= palabra %>"></label>
+        <div class="nivel-edit">
+          <label class="punto-opcion"><span><%= palabra %> (<%= k %>)</span><input class="mono-in" name="p<%= k + 1 %>" type="number" step="0.01" min="0" value="<%= [0, 2.5, 5, 7.5, 10][k] %>" required aria-label="Puntos de <%= palabra %>"></label>
+          <textarea name="d<%= k + 1 %>" rows="4" maxlength="1000" placeholder="Qué describe este nivel (opcional)" aria-label="Descriptor de <%= palabra %>"></textarea>
+        </div>
       <% }) %>
       <button type="button" class="link" data-repartir>Repartir desde <%= escala[4] %></button>
     </div>

@@ -8,9 +8,9 @@
       </div>
       <div class="dist" role="img" aria-label="<%= escala.map((p, i) => p + ': ' + c.conteo[i]).join(', ') %>">
         <% escala.forEach((p, i) => { const pct = c.n ? Math.round(c.conteo[i] / c.n * 100) : 0; %>
-          <span class="dist-col" title="<%= p %>: <%= c.conteo[i] %>">
+          <span class="dist-col" title="<%= p %> (<%= i %>): <%= c.conteo[i] %>">
             <span class="dist-barra"><span style="height: <%= pct %>%"></span></span>
-            <span class="dist-txt"><%= p.slice(0, 3) %>.</span>
+            <span class="dist-txt"><%= i %></span>
           </span>
         <% }) %>
       </div>
