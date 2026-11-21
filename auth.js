@@ -1,5 +1,6 @@
 // Administrador: entra con correo y contraseña. La contraseña se guarda cifrada (scrypt + sal) en la tabla `config`.
-// La primera vez se toman de ADMIN_EMAIL y ADMIN_PASSWORD en .env. Desde ahí se cambian en Configuración.
+// La primera vez se toman de ADMIN_EMAIL y ADMIN_PASSWORD en .env (sin contraseña, se genera una).
+// Desde ahí se cambian en Configuración.
 const crypto = require('crypto');
 const { db } = require('./db');
 
@@ -42,12 +43,27 @@ function cambiarClave(nueva) {
   escribir('admin_version', versionClave() + 1);
 }
 
-if (!leer('admin_clave')) {
-  escribir('admin_clave', cifrar(process.env.ADMIN_PASSWORD || 'cambia-esta-clave'));
-  escribir('admin_version', 1);
-}
-if (!leer('admin_correo')) {
-  escribir('admin_correo', normalizarCorreo(process.env.ADMIN_EMAIL || 'admin@example.com'));
+// Primer arranque: correo y contraseña de .env. Sin contraseña válida se genera una aleatoria
+// y se muestra una sola vez en la consola del servidor.
+{
+  const inicial = [];
+  if (!leer('admin_correo')) {
+    const correo = normalizarCorreo(process.env.ADMIN_EMAIL || 'admin@example.com');
+    escribir('admin_correo', correo);
+    if (!process.env.ADMIN_EMAIL) inicial.push(`correo: ${correo}`);
+  }
+  if (!leer('admin_clave')) {
+    let clave = String(process.env.ADMIN_PASSWORD || '');
+    if (clave.length < 8) {
+      clave = crypto.randomBytes(12).toString('base64url');
+      inicial.push(`contraseña: ${clave}`);
+    }
+    escribir('admin_clave', cifrar(clave));
+    escribir('admin_version', 1);
+  }
+  if (inicial.length) {
+    console.log(`Acceso inicial del administrador (cámbialo en Configuración): ${inicial.join(' · ')}`);
+  }
 }
 
 module.exports = { verificarClave, verificarAdmin, correoAdmin, cambiarCorreo, normalizarCorreo, cambiarClave, versionClave, cifrar, coincide };
